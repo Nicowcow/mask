@@ -1,0 +1,21 @@
+name:                makefile
+version:             0.1.0.0
+synopsis:            Simple project template from stack
+description:         Simple Makefile parser
+homepage:            http://github.com/Nicowcow/makefile#readme
+license:             MIT
+license-file:        LICENSE
+author:              Nicolas Mattia
+maintainer:          nicow.mattia@gmail.com
+copyright:           2016 Nicolas Mattia
+category:            Development
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , attoparsec
+                     , bytestring
+  exposed-modules:       Data.Makefile
