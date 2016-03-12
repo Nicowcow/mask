@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Data.Makefile
     ( Makefile (..)
     , Entry (..)
@@ -21,7 +22,8 @@ type Target = B.ByteString
 type Dependency = B.ByteString
 type Command = B.ByteString
 type Rule = (Target, [Dependency], [Command])
-data Entry =  Rule Rule | Assignment B.ByteString B.ByteString deriving (Show)
+data Entry = Rule Rule
+           | Assignment B.ByteString B.ByteString deriving (Show)
 type Makefile = [Entry]
 
 parseMakefile :: IO (Either String Makefile)
@@ -31,19 +33,18 @@ parseAsMakefile :: FilePath -> IO (Either String Makefile)
 parseAsMakefile f = Atto.parseOnly makefile <$> B.readFile f
 
 assignment :: Parser Entry
-assignment = do v1 <- desc1
+assignment = do v1 <- desc1 <|> desc2
                 v2 <- toLineEnd1
                 return $ Assignment v1 v2
 
 desc1 :: Parser B.ByteString
-desc1 = do v1 <- Atto.takeWhile1 (`notElem` ['=', '\n'])
+desc1 = do v1 <- Atto.takeWhile1 (`notElem` ['=', '\n', '#'])
            Atto.char8 '='
            return v1
 
 desc2 :: Parser B.ByteString
-desc2 = do v1 <- Atto.takeWhile1 (/= ':')
-           Atto.char8 ':'
-           Atto.char8 '='
+desc2 = do v1 <- Atto.takeWhile1 (`notElem` [':', '\n', '#'])
+           Atto.string ":="
            return v1
 
 emptyLine :: Parser ()
