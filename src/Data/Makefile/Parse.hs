@@ -13,7 +13,6 @@ import qualified Data.ByteString                  as B
 
 -- $setup
 -- >>> :set -XOverloadedStrings
--- >>> import Data.Either (isRight)
 
 -- | Parse makefile.
 --
