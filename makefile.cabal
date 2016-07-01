@@ -21,6 +21,7 @@ library
                         Data.Makefile
                       , Data.Makefile.Internal
                       , Data.Makefile.Parse
+                      , Data.Makefile.Parse.Internal
 
 
 test-suite test
