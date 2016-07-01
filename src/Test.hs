@@ -1,8 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Main (main) where
-import Data.ByteString hiding (any)
-import Data.Makefile
+
 import Control.Monad
+import Data.ByteString     hiding (any)
+import Data.Makefile
+import Data.Makefile.Parse
 
 main :: IO ()
 main = do

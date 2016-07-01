@@ -1,12 +1,11 @@
 name:                makefile
 version:             0.1.0.0
-synopsis:            Simple project template from stack
 description:         Simple Makefile parser
-homepage:            http://github.com/Nicowcow/makefile#readme
+homepage:            http://github.com/nmattia/mask
 license:             MIT
 license-file:        LICENSE
 author:              Nicolas Mattia
-maintainer:          nicow.mattia@gmail.com
+maintainer:          nicolas@nmattia.com
 copyright:           2016 Nicolas Mattia
 category:            Development
 build-type:          Simple
@@ -18,7 +17,11 @@ library
   build-depends:       base >= 4.7 && < 5
                      , attoparsec
                      , bytestring
-  exposed-modules:       Data.Makefile
+  exposed-modules:
+                        Data.Makefile
+                      , Data.Makefile.Internal
+                      , Data.Makefile.Parse
+
 
 test-suite test
   hs-source-dirs:      src
