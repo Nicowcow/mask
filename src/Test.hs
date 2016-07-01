@@ -2,6 +2,9 @@
 
 module Main (main) where
 
+import System.FilePath.Glob (glob)
+import Test.DocTest (doctest)
+
 import Control.Monad
 import Data.ByteString     hiding (any)
 import Data.Makefile
@@ -9,6 +12,7 @@ import Data.Makefile.Parse
 
 main :: IO ()
 main = do
+    doc
     withMakefile "test-data/basic/Makefile1" $ \m -> assertTarget "foo" m
     withMakefile "test-data/basic/Makefile2" $ \m -> do
         assertTargets [ "all"
@@ -79,3 +83,7 @@ assertTarget t (Makefile m) = unless (any (hasTarget t) m) $
 fromRight :: Either a b -> b
 fromRight (Right x) = x
 fromRight _ = error "fromRight"
+
+
+doc :: IO ()
+doc = glob "src/**/*.hs" >>= doctest
