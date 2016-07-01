@@ -65,15 +65,15 @@ assertAssignments :: [(ByteString, ByteString)] -> Makefile -> IO ()
 assertAssignments as m = mapM_ (`assertAssignment` m) as
 
 assertAssignment :: (ByteString, ByteString) -> Makefile -> IO ()
-assertAssignment (n, v) m = unless (any hasAssignment m) $
+assertAssignment (n, v) (Makefile m) = unless (any hasAssignment m) $
     error ("Assignment " ++ show (n, v) ++ " wasn't found in Makefile " ++ show m)
   where hasAssignment (Assignment n' v') = n == n' && v == v'
         hasAssignment _                  = False
 
 assertTarget :: Target -> Makefile -> IO ()
-assertTarget t m = unless (any (hasTarget t) m) $
+assertTarget t (Makefile m) = unless (any (hasTarget t) m) $
     error ("Target " ++ show t ++ " wasn't found in Makefile " ++ show m)
-  where hasTarget t (Rule (t', _, _)) = t == t'
+  where hasTarget t (Rule t' _ _) = t == t'
         hasTarget _ _                 = False
 
 fromRight :: Either a b -> b

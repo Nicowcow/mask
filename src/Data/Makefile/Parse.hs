@@ -51,13 +51,13 @@ block = do  many' emptyLine
             assignment <|> rule
 
 makefile :: Parser Makefile
-makefile = many' block
+makefile = Makefile <$> many' block
 
 isSpaceChar :: Char -> Bool
 isSpaceChar c = c == ' '
 
 target :: Parser Target
-target = do t <- Atto.takeWhile (/= ':')
+target = do t <- Target <$> Atto.takeWhile (/= ':')
             Atto.char8 ':'
             return t
 
@@ -66,12 +66,12 @@ toLineEnd1 = Atto.takeWhile1 (`notElem` ['\n', '#'])
 
 dependency :: Parser Dependency
 dependency = do Atto.takeWhile isSpaceChar
-                Atto.takeWhile1 (`notElem` [' ', '\n', '#'])
+                Dependency <$> Atto.takeWhile1 (`notElem` [' ', '\n', '#'])
 
 command :: Parser Command
 command = do many' emptyLine
              Atto.char8 '\t'
-             c <- toLineEnd1
+             c <- Command <$> toLineEnd1
              nextLine
              return c
 
@@ -80,4 +80,4 @@ rule = do t <- target
           ds <- many' dependency
           nextLine
           cs <- many' command
-          return $ Rule (t, ds, cs)
+          return $ Rule t ds cs
