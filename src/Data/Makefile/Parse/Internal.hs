@@ -5,7 +5,7 @@ module Data.Makefile.Parse.Internal where
 import           Control.Applicative              ((<|>))
 import           Control.Monad                    (void)
 import           Data.Attoparsec.ByteString
-import           Data.Makefile.Internal
+import           Data.Makefile
 import           Data.Word                        (Word8)
 
 import qualified Data.Attoparsec.ByteString.Char8 as Atto

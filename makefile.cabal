@@ -19,7 +19,6 @@ library
                      , bytestring
   exposed-modules:
                         Data.Makefile
-                      , Data.Makefile.Internal
                       , Data.Makefile.Parse
                       , Data.Makefile.Parse.Internal
 
@@ -35,4 +34,3 @@ test-suite test
                      , doctest
                      , Glob
                      , makefile
-

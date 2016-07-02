@@ -84,6 +84,5 @@ fromRight :: Either a b -> b
 fromRight (Right x) = x
 fromRight _ = error "fromRight"
 
-
 doc :: IO ()
 doc = glob "src/**/*.hs" >>= doctest
