@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/nmattia/mask.svg?branch=master)](https://travis-ci.org/nmattia/mask)
+
 # Haskell Makefile Parser
 
 Simple Haskell Makefile parser. Documentation is located
