@@ -6,7 +6,6 @@ import           Control.Applicative              ((<|>))
 import           Control.Monad                    (void)
 import           Data.Attoparsec.ByteString
 import           Data.Makefile
-import           Data.Word                        (Word8)
 
 import qualified Data.Attoparsec.ByteString.Char8 as Atto
 import qualified Data.ByteString                  as B
@@ -35,7 +34,7 @@ makefile = Makefile <$> many' entry
 -- | Parser for a makefile entry (either a rule or a variable assignment)
 entry :: Parser Entry
 entry = do
-  many' emptyLine
+  void $ many' emptyLine
   assignment <|> rule
 
 -- | Parser of variable assignment
@@ -54,8 +53,8 @@ rule = do t <- target
 
 -- | Parser for a command
 command :: Parser Command
-command = do many' emptyLine
-             Atto.char8 '\t'
+command = do _ <- many' emptyLine
+             _ <- Atto.char8 '\t'
              c <- Command <$> toLineEnd1
              nextLine
              return c
@@ -63,13 +62,13 @@ command = do many' emptyLine
 -- | Parser for a (rule) target
 target :: Parser Target
 target = do t <- Target <$> Atto.takeWhile (/= ':')
-            Atto.char8 ':'
+            _ <- Atto.char8 ':'
             return t
 
 -- | Parser for a (rule) dependency
 dependency :: Parser Dependency
-dependency = do Atto.takeWhile isSpaceChar
-                Dependency <$> Atto.takeWhile1 (`notElem` [' ', '\n', '#'])
+dependency = Atto.takeWhile isSpaceChar
+          >> Dependency <$> Atto.takeWhile1 (`notElem` [' ', '\n', '#'])
 
 -- | Parser for variable name in declaration (lazy set, @var = x@)
 --
@@ -78,7 +77,7 @@ dependency = do Atto.takeWhile isSpaceChar
 lazyVar :: Parser B.ByteString
 lazyVar = do
   v1 <- Atto.takeWhile1 (`notElem` ['=', '\n', '#'])
-  Atto.char8 '='
+  _ <- Atto.char8 '='
   return v1
 
 -- | Parser for variable name in declaration (immediate set, @var := x@)
@@ -88,7 +87,7 @@ lazyVar = do
 immVar :: Parser B.ByteString
 immVar = do
   v1 <- Atto.takeWhile1 (`notElem` [':', '\n', '#'])
-  Atto.string ":="
+  _ <- Atto.string ":="
   return v1
 
 -- | Parser for a comment (the comment starts with the hashtag)
@@ -96,23 +95,21 @@ immVar = do
 -- >>> Atto.parseOnly comment "# I AM A COMMENT"
 -- Right " I AM A COMMENT"
 comment :: Parser B.ByteString
-comment = do Atto.char8 '#'
-             Atto.takeWhile (/= '\n')
+comment = Atto.char8 '#' >> Atto.takeWhile (/= '\n')
 
 -- | Consume a newline character (@'\n'@)
 nextLine :: Parser ()
-nextLine = do Atto.takeWhile (/= '\n')
-              void $ Atto.char8 '\n'
+nextLine = void $ Atto.takeWhile (/= '\n') >> Atto.char8 '\n'
 
 -- | Consume an empty line (potentially containing spaces and/or tabs).
 --
 -- >>> Atto.parseOnly emptyLine "\t\t   \t   \t\n"
 -- Right ()
 emptyLine :: Parser ()
-emptyLine = do Atto.takeWhile (`elem` ['\t', ' '])
-               many' comment
-               Atto.char8 '\n'
-               return ()
+emptyLine = Atto.takeWhile (`elem` ['\t', ' '])
+         >> many' comment
+         >> Atto.char8 '\n'
+         >> return ()
 
 isSpaceChar :: Char -> Bool
 isSpaceChar c = c == ' '
