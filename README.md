@@ -2,8 +2,9 @@
 
 # Haskell Makefile Parser
 
-Simple Haskell Makefile parser. Documentation is located
-[here](http://docs.nmattia.com/mask/).
+Simple Haskell Makefile parser. The project is available on
+hackage [(latest)](http://hackage.haskell.org/package/makefile) and
+documentation for `master` can be found [here](http://docs.nmattia.com/mask/).
 
 
 Example:
