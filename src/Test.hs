@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports #-}
 
 module Main (main) where
 
-import System.FilePath.Glob (glob)
+import "Glob" System.FilePath.Glob (glob)
 import Test.DocTest (doctest)
 
 import Control.Monad
