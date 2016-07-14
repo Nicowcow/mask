@@ -1,5 +1,5 @@
 name:                   makefile
-version:                0.1.0.2
+version:                0.1.0.3
 synopsis:            Simple Makefile parser
 description:
   This package provides a few @Attoparser@ parsers and convenience functions
@@ -23,7 +23,7 @@ cabal-version:          >=1.10
 
 extra-source-files:
   test-data/basic/Makefile1
-  test-data/basic/Makefile1
+  test-data/basic/Makefile2
   test-data/elfparse/Makefile
 
 source-repository head
