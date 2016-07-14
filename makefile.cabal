@@ -21,6 +21,10 @@ category:               Parsing
 build-type:             Simple
 cabal-version:          >=1.10
 
+extra-source-files:
+  test-data/basic/Makefile1
+  test-data/basic/Makefile1
+  test-data/elfparse/Makefile
 
 source-repository head
   type:     git
