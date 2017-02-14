@@ -10,6 +10,7 @@ import Control.Monad
 import Data.ByteString     hiding (any)
 import Data.Makefile
 import Data.Makefile.Parse
+import Data.Makefile.Render
 
 main :: IO ()
 main = do
@@ -59,9 +60,18 @@ main = do
                           , ("STDPM", "./pugs_src_perl6/STD.pm")
                           , ("TMP", "deleteme")
                           {- ... feeling lazy -} ] m
+    withMakefile "test-data/basic/Makefile1" $ \m -> do
+      writeMakefile  "test-data/basic/_Makefile1" m
+      withMakefile "test-data/basic/_Makefile1" $ \mm -> assertMakefile m mm
+    withMakefile "test-data/basic/Makefile2" $ \m -> do
+      writeMakefile  "test-data/basic/_Makefile2" m
+      withMakefile "test-data/basic/_Makefile2" $ \mm -> assertMakefile m mm
 
 withMakefile :: FilePath -> (Makefile -> IO ()) -> IO ()
 withMakefile  f a = fromRight <$> parseAsMakefile f >>= a
+
+assertMakefile :: Makefile -> Makefile -> IO ()
+assertMakefile m1 m2 = if (m1 == m2) then return () else error "Makefiles mismatch!"
 
 assertTargets :: [Target] -> Makefile -> IO ()
 assertTargets ts m = mapM_ (`assertTarget` m) ts
