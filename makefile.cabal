@@ -40,6 +40,8 @@ library
                         Data.Makefile
                       , Data.Makefile.Parse
                       , Data.Makefile.Parse.Internal
+                      , Data.Makefile.Render
+                      , Data.Makefile.Render.Internal
   ghc-options:        -Wall
 
 
@@ -57,3 +59,5 @@ test-suite test
   other-modules:        Data.Makefile
                       , Data.Makefile.Parse
                       , Data.Makefile.Parse.Internal
+                      , Data.Makefile.Render
+                      , Data.Makefile.Render.Internal
