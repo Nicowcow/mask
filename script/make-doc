@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+PROJECT_ROOT=$(dirname $0)/..
+DOCS_DIR=${PROJECT_ROOT}/docs
+
+mkdir -p ${DOCS_DIR}
+
+stack install hscolour
+stack haddock
+
+rsync -av $(stack path --local-doc-root)/ "${DOCS_DIR}" --delete
