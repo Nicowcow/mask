@@ -66,6 +66,13 @@ main = do
     withMakefile "test-data/basic/Makefile2" $ \m -> do
       writeMakefile  "test-data/basic/_Makefile2" m
       withMakefile "test-data/basic/_Makefile2" $ \mm -> assertMakefile m mm
+    withMakefileContents
+      "foo = bar"
+      (assertAssignments [("foo", "bar")])
+
+withMakefileContents :: ByteString -> (Makefile -> IO ()) -> IO ()
+withMakefileContents contents a =
+  a $ fromRight (parseMakefileContents contents)
 
 withMakefile :: FilePath -> (Makefile -> IO ()) -> IO ()
 withMakefile  f a = fromRight <$> parseAsMakefile f >>= a

@@ -5,9 +5,11 @@ module Data.Makefile.Parse.Internal where
 import           Control.Applicative              ((<|>))
 import           Data.Attoparsec.ByteString
 import           Data.Makefile
+import           Data.Char (isSpace)
 
 import qualified Data.Attoparsec.ByteString.Char8 as Atto
 import qualified Data.ByteString                  as B
+import qualified Data.ByteString.Char8            as C
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -21,6 +23,9 @@ parseMakefile = Atto.parseOnly makefile <$> B.readFile "Makefile"
 -- | Parse the specified file as a makefile.
 parseAsMakefile :: FilePath -> IO (Either String Makefile)
 parseAsMakefile f = Atto.parseOnly makefile <$> B.readFile f
+
+parseMakefileContents :: B.ByteString -> Either String Makefile
+parseMakefileContents = Atto.parseOnly makefile
 
 --------------------------------------------------------------------------------
 -- Parsers
@@ -36,8 +41,19 @@ entry = many' emptyLine *> (assignment <|> rule)
 
 -- | Parser of variable assignment
 assignment :: Parser Entry
-assignment = Assignment <$> (lazyVar <|> immVar)
-                        <*> toLineEnd1
+assignment =
+  Assignment
+    <$> (stripBS <$> (lazyVar <|> immVar))
+    <*> (stripBS <$> toLineEnd1)
+  -- XXX: temporary, unefficient function to strip a 'ByteString' until
+  -- https://github.com/haskell/bytestring/pull/121 is merged
+  where
+    stripBS :: B.ByteString -> B.ByteString
+    stripBS =
+      B.reverse
+      . C.dropWhile isSpace
+      . B.reverse . C.dropWhile isSpace
+
 
 -- | Parser for an entire rule
 rule :: Parser Entry

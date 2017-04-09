@@ -3,6 +3,7 @@
 module Data.Makefile.Parse
   ( I.parseMakefile
   , I.parseAsMakefile
+  , I.parseMakefileContents
   , I.makefile
   , I.entry
   , I.assignment
