@@ -39,7 +39,12 @@ makefile = Makefile <$> many' entry
 entry :: Parser Entry
 entry = many' emptyLine *> (assignment <|> rule)
 
--- | Parser of variable assignment
+-- | Parser of variable assignment (see 'Assignment'). Note that leading and
+-- trailing whitespaces will be stripped both from the variable name and
+-- assigned value.
+--
+-- >>> Atto.parseOnly assignment "foo = bar "
+-- Right (Assignment "foo" "bar")
 assignment :: Parser Entry
 assignment =
   Assignment
