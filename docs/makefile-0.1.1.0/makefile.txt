@@ -83,6 +83,7 @@ parseMakefile :: IO (Either String Makefile)
 
 -- | Parse the specified file as a makefile.
 parseAsMakefile :: FilePath -> IO (Either String Makefile)
+parseMakefileContents :: ByteString -> Either String Makefile
 
 -- | Parser for a makefile
 makefile :: Parser Makefile
@@ -90,7 +91,14 @@ makefile :: Parser Makefile
 -- | Parser for a makefile entry (either a rule or a variable assignment)
 entry :: Parser Entry
 
--- | Parser of variable assignment
+-- | Parser of variable assignment (see <a>Assignment</a>). Note that
+--   leading and trailing whitespaces will be stripped both from the
+--   variable name and assigned value.
+--   
+--   <pre>
+--   &gt;&gt;&gt; Atto.parseOnly assignment "foo = bar "
+--   Right (Assignment "foo" "bar")
+--   </pre>
 assignment :: Parser Entry
 
 -- | Parser for an entire rule
@@ -153,6 +161,7 @@ parseMakefile :: IO (Either String Makefile)
 
 -- | Parse the specified file as a makefile.
 parseAsMakefile :: FilePath -> IO (Either String Makefile)
+parseMakefileContents :: ByteString -> Either String Makefile
 
 -- | Parser for a makefile
 makefile :: Parser Makefile
@@ -160,7 +169,14 @@ makefile :: Parser Makefile
 -- | Parser for a makefile entry (either a rule or a variable assignment)
 entry :: Parser Entry
 
--- | Parser of variable assignment
+-- | Parser of variable assignment (see <a>Assignment</a>). Note that
+--   leading and trailing whitespaces will be stripped both from the
+--   variable name and assigned value.
+--   
+--   <pre>
+--   &gt;&gt;&gt; Atto.parseOnly assignment "foo = bar "
+--   Right (Assignment "foo" "bar")
+--   </pre>
 assignment :: Parser Entry
 
 -- | Parser for an entire rule
