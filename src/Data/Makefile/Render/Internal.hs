@@ -3,31 +3,31 @@
 module Data.Makefile.Render.Internal where
 import           Data.Makefile
 import           Data.Monoid
-import qualified Data.ByteString.Lazy as B
-import           Data.ByteString.Builder
-import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.IO as TL
+import Data.Text.Lazy.Builder
 
 writeMakefile :: FilePath -> Makefile -> IO ()
 writeMakefile f m = do
   let s = encodeMakefile m
-  BL.writeFile f s
+  TL.writeFile f s
 
-encodeMakefile :: Makefile -> B.ByteString
-encodeMakefile = toLazyByteString . renderMakefile
+encodeMakefile :: Makefile -> TL.Text
+encodeMakefile = toLazyText . renderMakefile
 
 renderMakefile :: Makefile -> Builder
-renderMakefile (Makefile es ) = mconcat [renderEntry e <> charUtf8 '\n' | e <- es]
+renderMakefile (Makefile es ) = mconcat [renderEntry e <> singleton '\n' | e <- es]
 
 renderEntry :: Entry -> Builder
-renderEntry (Assignment key value ) = byteString key <> charUtf8 '=' <> byteString value
+renderEntry (Assignment key value ) = fromText key <> singleton '=' <> fromText value
 renderEntry (Rule (Target t) ds cmds) =
-  byteString t <> charUtf8 ':' <>
-  mconcat [charUtf8 ' ' <> renderDep d | d <- ds] <>
-  charUtf8 '\n' <>
-  mconcat [renderCmd cmd <> charUtf8 '\n' | cmd <- cmds]
+  fromText t <> singleton ':' <>
+  mconcat [singleton ' ' <> renderDep d | d <- ds] <>
+  singleton '\n' <>
+  mconcat [renderCmd cmd <> singleton '\n' | cmd <- cmds]
 
 renderDep :: Dependency -> Builder
-renderDep (Dependency dep ) = byteString dep
+renderDep (Dependency dep ) = fromText dep
 
 renderCmd :: Command -> Builder
-renderCmd (Command cmd ) = charUtf8 '\t' <> byteString cmd
+renderCmd (Command cmd ) = singleton '\t' <> fromText cmd

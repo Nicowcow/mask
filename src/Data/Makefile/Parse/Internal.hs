@@ -3,13 +3,12 @@
 module Data.Makefile.Parse.Internal where
 
 import           Control.Applicative              ((<|>))
-import           Data.Attoparsec.ByteString
+import           Data.Attoparsec.Text
 import           Data.Makefile
-import           Data.Char (isSpace)
 
-import qualified Data.Attoparsec.ByteString.Char8 as Atto
-import qualified Data.ByteString                  as B
-import qualified Data.ByteString.Char8            as C
+import qualified Data.Attoparsec.Text as Atto
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -18,13 +17,13 @@ import qualified Data.ByteString.Char8            as C
 --
 -- Tries to open and parse a file name @Makefile@ in the current directory.
 parseMakefile :: IO (Either String Makefile)
-parseMakefile = Atto.parseOnly makefile <$> B.readFile "Makefile"
+parseMakefile = Atto.parseOnly makefile <$> T.readFile "Makefile"
 
 -- | Parse the specified file as a makefile.
 parseAsMakefile :: FilePath -> IO (Either String Makefile)
-parseAsMakefile f = Atto.parseOnly makefile <$> B.readFile f
+parseAsMakefile f = Atto.parseOnly makefile <$> T.readFile f
 
-parseMakefileContents :: B.ByteString -> Either String Makefile
+parseMakefileContents :: T.Text -> Either String Makefile
 parseMakefileContents = Atto.parseOnly makefile
 
 --------------------------------------------------------------------------------
@@ -61,13 +60,13 @@ rule =
 
 -- | Parser for a command
 command :: Parser Command
-command = Command <$> (many' emptyLine *> Atto.char8 '\t'
+command = Command <$> (many' emptyLine *> Atto.char '\t'
                                        *> toLineEnd
                                        <* nextLine)
 
 -- | Parser for a (rule) target
 target :: Parser Target
-target = Target <$> stripped (Atto.takeWhile (/= ':') <* Atto.char8 ':')
+target = Target <$> stripped (Atto.takeWhile (/= ':') <* Atto.char ':')
 
 -- | Parser for a (rule) dependency
 dependency :: Parser Dependency
@@ -78,26 +77,26 @@ dependency = Dependency <$> (Atto.takeWhile isSpaceChar
 --
 -- >>> Atto.parseOnly lazyVar "CFLAGS=-c -Wall"
 -- Right "CFLAGS"
-lazyVar :: Parser B.ByteString
-lazyVar = Atto.takeWhile1 (`notElem` ['=', '\n', '#']) <* Atto.char8 '='
+lazyVar :: Parser T.Text
+lazyVar = Atto.takeWhile1 (`notElem` ['=', '\n', '#']) <* Atto.char '='
 
 -- | Parser for variable name in declaration (immediate set, @var := x@)
 --
 -- >>> Atto.parseOnly immVar "CFLAGS:=-c -Wall"
 -- Right "CFLAGS"
-immVar :: Parser B.ByteString
+immVar :: Parser T.Text
 immVar = Atto.takeWhile1 (`notElem` [':', '\n', '#']) <* Atto.string ":="
 
 -- | Parser for a comment (the comment starts with the hashtag)
 --
 -- >>> Atto.parseOnly comment "# I AM A COMMENT"
 -- Right " I AM A COMMENT"
-comment :: Parser B.ByteString
-comment = Atto.char8 '#' *> Atto.takeWhile (/= '\n')
+comment :: Parser T.Text
+comment = Atto.char '#' *> Atto.takeWhile (/= '\n')
 
 -- | Consume a newline character (@'\n'@)
 nextLine :: Parser ()
-nextLine = Atto.takeWhile (/= '\n') *> Atto.char8 '\n' *> pure ()
+nextLine = Atto.takeWhile (/= '\n') *> Atto.char '\n' *> pure ()
 
 -- | Consume an empty line (potentially containing spaces and/or tabs).
 --
@@ -106,27 +105,18 @@ nextLine = Atto.takeWhile (/= '\n') *> Atto.char8 '\n' *> pure ()
 emptyLine :: Parser ()
 emptyLine = Atto.takeWhile (`elem` ['\t', ' ']) *>
             many' comment *>
-            Atto.char8 '\n' *>
+            Atto.char '\n' *>
             pure ()
 
 isSpaceChar :: Char -> Bool
 isSpaceChar c = c == ' '
 
-toLineEnd :: Parser B.ByteString
+toLineEnd :: Parser T.Text
 toLineEnd = Atto.takeWhile (`notElem` ['\n', '#'])
 
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
 
--- XXX: temporary, unefficient function to strip a 'ByteString' until
--- https://github.com/haskell/bytestring/pull/121 is merged
-stripBS :: B.ByteString -> B.ByteString
-stripBS =
-  B.reverse
-  . C.dropWhile isSpace
-  . B.reverse . C.dropWhile isSpace
-
-
-stripped :: Parser B.ByteString -> Parser B.ByteString
-stripped = fmap stripBS
+stripped :: Parser T.Text -> Parser T.Text
+stripped = fmap T.strip
