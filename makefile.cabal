@@ -1,6 +1,6 @@
 name:                   makefile
 version:                0.1.1.0
-synopsis:            Simple Makefile parser
+synopsis:            Simple Makefile parser and generator
 description:
   This package provides a few @Attoparser@ parsers and convenience functions
   for parsing Makefiles.
@@ -16,7 +16,7 @@ license:                MIT
 license-file:           LICENSE
 author:                 Nicolas Mattia
 maintainer:             nicolas@nmattia.com
-copyright:              2016 Nicolas Mattia
+copyright:              2016-2017 Nicolas Mattia
 category:               Parsing
 build-type:             Simple
 cabal-version:          >=1.10

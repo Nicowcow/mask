@@ -1,68 +1,70 @@
 [![Build Status](https://travis-ci.org/nmattia/mask.svg?branch=master)](https://travis-ci.org/nmattia/mask)
 
-# Haskell Makefile Parser
+# Haskell Makefile Parser and Generator
 
-Simple Haskell Makefile parser. The project is available on
+Simple Haskell Makefile parser and generator. The project is available on
 hackage [(latest)](http://hackage.haskell.org/package/makefile) and
 documentation for `master` can be found [here](http://docs.nmattia.com/mask/).
 
+# Example
 
-Example:
+## Parsing
 
 ``` Makefile
 
-# I am a comment, and I want to say that the variable CC will be
-# the compiler to use.
-CC=g++
-# Hey!, I am comment number 2. I want to say that CFLAGS will be the
-# options I'll pass to the compiler.
-CFLAGS=-c -Wall
+# Define compiler
+CC:=gcc
+
+# Define lazy compiler
+LC=ghc
 
 all: hello
 
-hello: main.o factorial.o hello.o
-	$(CC) main.o factorial.o hello.o -o hello
-
-main.o: main.cpp
-	$(CC) $(CFLAGS) main.cpp
-
-factorial.o: factorial.cpp
-	$(CC) $(CFLAGS) factorial.cpp
-
-hello.o: hello.cpp
-	$(CC) $(CFLAGS) hello.cpp
-
-clean:
-	rm *o hello
+hello: foo bar
+	$(CC) baz.o
 ```
 
-Running `parseMakefile :: IO (Either String Makefile)` (output cleaned up):
+Running `parseMakefile :: IO (Either String Makefile)` (pretty-printed for
+convenience):
 
 ``` haskell
-Right (
-    Makefile {
-        entries = [
-            Assignment "CC" "g++",
-            Assignment "CFLAGS" "-c -Wall",
-            Rule (Target "all")
-                 [Dependency "hello"]
-                 [],
-            Rule (Target "hello")
-                 [Dependency "main.o",Dependency "factorial.o",Dependency "hello.o"]
-                 [Command "$(CC) main.o factorial.o hello.o -o hello"],
-            Rule (Target "main.o")
-                 [Dependency "main.cpp"]
-                 [Command "$(CC) $(CFLAGS) main.cpp"],
-            Rule (Target "factorial.o")
-                 [Dependency "factorial.cpp"]
-                 [Command "$(CC) $(CFLAGS) factorial.cpp"],
-            Rule (Target "hello.o")
-                 [Dependency "hello.cpp"]
-                 [Command "$(CC) $(CFLAGS) hello.cpp"],
-            Rule (Target "clean")
-                 []
-                 [Command "rm *o hello"]
-        ]
-    }
-)
+Right
+    ( Makefile
+        { entries =
+            [ Assignment SimpleAssign "CC" "gcc"
+            , Assignment RecursiveAssign "LC" "ghc"
+            , Rule
+                (Target "all")
+                [Dependency "hello"]
+                []
+            , Rule
+                (Target "hello")
+                [ Dependency "foo"
+                , Dependency "bar"
+                ]
+                [Command "$(CC) baz.o"]
+            ]
+        }
+    )
 ```
+
+## Generating
+
+``` haskell
+myMakefile :: Makefile
+myMakefile =
+    Makefile
+        { entries =
+            [ Assignment SimpleAssign "foo" "bar"
+            , Rule (Target "baz") [Dependency "qux"] [Command "rm -rf /"]
+            ]
+        }
+```
+
+Running `encodeMakefile :: Makefile -> Text`:
+
+``` Makefile
+foo:=bar
+baz: qux
+	rm -rf /
+``
