@@ -5,12 +5,14 @@ module Main (main) where
 
 import "Glob" System.FilePath.Glob (glob)
 import Test.DocTest (doctest)
+import Data.Monoid
 
 import Control.Monad
 import Data.ByteString     hiding (any)
 import Data.Makefile
 import Data.Makefile.Parse
 import Data.Makefile.Render
+import qualified Data.ByteString.Char8 as C8
 
 main :: IO ()
 main = do
@@ -73,6 +75,20 @@ main = do
     withMakefileContents
       "foo : bar"
       (assertTargets ["foo"])
+    withMakefileContents
+      (C8.pack $ unlines
+        [ "var="
+        , "foo: bar"
+        ]
+      )
+      (assertMakefile
+        Makefile
+          { entries =
+              [ Assignment "var" ""
+              , Rule "foo" ["bar"] []
+              ]
+          }
+        )
 
 withMakefileContents :: ByteString -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
@@ -82,7 +98,13 @@ withMakefile :: FilePath -> (Makefile -> IO ()) -> IO ()
 withMakefile  f a = fromRight <$> parseAsMakefile f >>= a
 
 assertMakefile :: Makefile -> Makefile -> IO ()
-assertMakefile m1 m2 = if (m1 == m2) then return () else error "Makefiles mismatch!"
+assertMakefile m1 m2 =
+  unless (m1 == m2)
+    $ error $ unwords
+        [ "Makefiles mismatch!"
+        , "got " <> show m1
+        , "and " <> show m2
+        ]
 
 assertTargets :: [Target] -> Makefile -> IO ()
 assertTargets ts m = mapM_ (`assertTarget` m) ts
