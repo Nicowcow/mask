@@ -1,5 +1,5 @@
 name:                   makefile
-version:                0.1.1.0
+version:                1.0.0.0
 synopsis:            Simple Makefile parser and generator
 description:
   This package provides a few @Attoparser@ parsers and convenience functions
