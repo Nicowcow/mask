@@ -67,4 +67,4 @@ Running `encodeMakefile :: Makefile -> Text`:
 foo:=bar
 baz: qux
 	rm -rf /
-``
+```
