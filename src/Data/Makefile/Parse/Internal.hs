@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Data.Makefile.Parse.Internal where
 
 import Control.Monad
-import           Control.Applicative              ((<|>))
+import           Control.Applicative
 import           Data.Attoparsec.Text
 import           Data.Makefile
 
@@ -43,13 +44,70 @@ entry = many' emptyLine *> (assignment <|> rule)
 -- trailing whitespaces will be stripped both from the variable name and
 -- assigned value.
 --
+-- Note that this tries to follow GNU make's (crazy) behavior when it comes to
+-- variable names and assignment operators.
+--
 -- >>> Atto.parseOnly assignment "foo = bar "
--- Right (Assignment "foo" "bar")
+-- Right (Assignment RecursiveAssign "foo" "bar")
+--
+-- >>> Atto.parseOnly assignment "foo := bar "
+-- Right (Assignment SimpleAssign "foo" "bar")
+--
+-- >>> Atto.parseOnly assignment "foo ::= bar "
+-- Right (Assignment SimplePosixAssign "foo" "bar")
+--
+-- >>> Atto.parseOnly assignment "foo?= bar "
+-- Right (Assignment ConditionalAssign "foo" "bar")
+--
+-- >>> Atto.parseOnly assignment "foo??= bar "
+-- Right (Assignment ConditionalAssign "foo?" "bar")
+--
+-- >>> Atto.parseOnly assignment "foo!?!= bar "
+-- Right (Assignment ShellAssign "foo!?" "bar")
 assignment :: Parser Entry
-assignment =
-  Assignment
-    <$> stripped (lazyVar <|> immVar)
-    <*> toEscapedLineEnd -- toEscapedLineEnd strips
+assignment = do
+  varName <- variableName
+  assType <- assignmentType
+  varVal <- toEscapedLineEnd
+  return (Assignment assType varName varVal)
+
+-- | Read chars while some ('Parser', monadic) predicate is 'True'.
+--
+-- XXX: extremely inefficient.
+takeWhileM :: (Char -> Parser Bool) -> Parser T.Text
+takeWhileM a = (T.pack . reverse) <$> go []
+  where
+    go cs = do
+      c <- Atto.anyChar
+      True <- a c
+      go (c:cs) <|> pure (c:cs)
+
+variableName :: Parser T.Text
+variableName = stripped $ takeWhileM go
+  where
+    go '+' = Atto.peekChar' >>= \case
+                  '=' -> return False
+                  _c -> return True
+    go '?' = Atto.peekChar' >>= \case
+                  '=' -> return False
+                  _c -> return True
+    go '!' = Atto.peekChar' >>= \case
+                  '=' -> return False
+                  _c -> return True
+    -- those chars are not allowed in variable names
+    go ':' = return False
+    go '#' = return False
+    go '=' = return False
+    go _c = return True
+
+assignmentType :: Parser AssignmentType
+assignmentType =
+  ("=" *> pure RecursiveAssign)
+  <|> ("+=" *> pure AppendAssign)
+  <|> ("?=" *> pure ConditionalAssign)
+  <|> ("!=" *> pure ShellAssign)
+  <|> (":=" *> pure SimpleAssign)
+  <|> ("::=" *> pure SimplePosixAssign)
 
 -- | Parser for an entire rule
 rule :: Parser Entry
@@ -121,6 +179,8 @@ toLineEnd = Atto.takeWhile (`notElem` ['\n', '#'])
 -- | Get the contents until the end of the (potentially multi) line. Multiple
 -- lines are separated by a @\\@ char and individual lines will be stripped and
 -- spaces will be interspersed.
+--
+-- The final @\n@ character is consumed.
 --
 -- >>> Atto.parseOnly toEscapedLineEnd "foo bar \\\n baz"
 -- Right "foo bar baz"

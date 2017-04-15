@@ -11,7 +11,33 @@ import Control.Monad
 import Data.Makefile
 import Data.Makefile.Parse
 import Data.Makefile.Render
+import Test.QuickCheck
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+
+instance Arbitrary Target where
+  arbitrary = pure $ Target "foo"
+
+instance Arbitrary Dependency where
+  arbitrary = pure $ Dependency "bar"
+
+instance Arbitrary Command where
+  arbitrary = pure $ Command "baz"
+
+instance Arbitrary AssignmentType where
+  arbitrary =
+    elements [minBound..maxBound]
+
+instance Arbitrary Entry where
+  arbitrary =
+    oneof
+      [ Rule <$> arbitrary <*> arbitrary <*> arbitrary
+      , Assignment <$> arbitrary <*> pure "foo" <*> pure "bar"
+      ]
+
+instance Arbitrary Makefile where
+  arbitrary = Makefile <$> arbitrary
+
 
 main :: IO ()
 main = do
@@ -83,7 +109,7 @@ main = do
       (assertMakefile
         Makefile
           { entries =
-              [ Assignment "var" ""
+              [ Assignment RecursiveAssign "var" ""
               , Rule "foo" ["bar"] []
               ]
           }
@@ -178,6 +204,12 @@ main = do
               ]
           }
         )
+    Success{} <- quickCheckResult prop_encodeDecode
+    return ()
+
+prop_encodeDecode :: Makefile -> Bool
+prop_encodeDecode m =
+  (fromRight $ parseMakefileContents $ TL.toStrict $ encodeMakefile m) == m
 
 withMakefileContents :: T.Text -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
@@ -204,7 +236,7 @@ assertAssignments as m = mapM_ (`assertAssignment` m) as
 assertAssignment :: (T.Text, T.Text) -> Makefile -> IO ()
 assertAssignment (n, v) (Makefile m) = unless (any hasAssignment m) $
     error ("Assignment " ++ show (n, v) ++ " wasn't found in Makefile " ++ show m)
-  where hasAssignment (Assignment n' v') = n == n' && v == v'
+  where hasAssignment (Assignment _ n' v') = n == n' && v == v'
         hasAssignment _                  = False
 
 assertTarget :: Target -> Makefile -> IO ()

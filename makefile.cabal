@@ -55,6 +55,7 @@ test-suite test
                       , text         >= 1.1
                       , doctest      >= 0.9
                       , Glob         >= 0.7
+                      , QuickCheck
                       , makefile
   other-modules:        Data.Makefile
                       , Data.Makefile.Parse
