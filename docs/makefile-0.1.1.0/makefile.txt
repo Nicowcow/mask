@@ -46,19 +46,19 @@ Makefile :: [Entry] -> Makefile
 --   world</tt>)
 data Entry
 Rule :: Target -> [Dependency] -> [Command] -> Entry
-Assignment :: ByteString -> ByteString -> Entry
+Assignment :: Text -> Text -> Entry
 
 -- | Makefile target (<tt>foo</tt> in the example above)
 newtype Target
-Target :: ByteString -> Target
+Target :: Text -> Target
 
 -- | Target dependency (<tt>bar</tt> in the example above)
 newtype Dependency
-Dependency :: ByteString -> Dependency
+Dependency :: Text -> Dependency
 
 -- | Command (<tt>baz</tt> in the example above)
 newtype Command
-Command :: ByteString -> Command
+Command :: Text -> Command
 instance GHC.Classes.Eq Data.Makefile.Makefile
 instance GHC.Show.Show Data.Makefile.Makefile
 instance GHC.Classes.Eq Data.Makefile.Entry
@@ -83,7 +83,7 @@ parseMakefile :: IO (Either String Makefile)
 
 -- | Parse the specified file as a makefile.
 parseAsMakefile :: FilePath -> IO (Either String Makefile)
-parseMakefileContents :: ByteString -> Either String Makefile
+parseMakefileContents :: Text -> Either String Makefile
 
 -- | Parser for a makefile
 makefile :: Parser Makefile
@@ -119,7 +119,7 @@ dependency :: Parser Dependency
 --   &gt;&gt;&gt; Atto.parseOnly lazyVar "CFLAGS=-c -Wall"
 --   Right "CFLAGS"
 --   </pre>
-lazyVar :: Parser ByteString
+lazyVar :: Parser Text
 
 -- | Parser for variable name in declaration (immediate set, <tt>var :=
 --   x</tt>)
@@ -128,7 +128,7 @@ lazyVar :: Parser ByteString
 --   &gt;&gt;&gt; Atto.parseOnly immVar "CFLAGS:=-c -Wall"
 --   Right "CFLAGS"
 --   </pre>
-immVar :: Parser ByteString
+immVar :: Parser Text
 
 -- | Parser for a comment (the comment starts with the hashtag)
 --   
@@ -136,7 +136,7 @@ immVar :: Parser ByteString
 --   &gt;&gt;&gt; Atto.parseOnly comment "# I AM A COMMENT"
 --   Right " I AM A COMMENT"
 --   </pre>
-comment :: Parser ByteString
+comment :: Parser Text
 
 -- | Consume a newline character (<tt>'\n'</tt>)
 nextLine :: Parser ()
@@ -148,8 +148,23 @@ nextLine :: Parser ()
 --   Right ()
 --   </pre>
 emptyLine :: Parser ()
-isSpaceChar :: Char -> Bool
-toLineEnd1 :: Parser ByteString
+toLineEnd :: Parser Text
+
+-- | Get the contents until the end of the (potentially multi) line.
+--   Multiple lines are separated by a <tt>\</tt> char and individual lines
+--   will be stripped and spaces will be interspersed.
+--   
+--   <pre>
+--   &gt;&gt;&gt; Atto.parseOnly toEscapedLineEnd "foo bar \\\n baz"
+--   Right "foo bar baz"
+--   </pre>
+--   
+--   <pre>
+--   &gt;&gt;&gt; Atto.parseOnly toEscapedLineEnd "foo \t\\\n bar \\\n baz \\\n \t"
+--   Right "foo bar baz"
+--   </pre>
+toEscapedLineEnd :: Parser Text
+stripped :: Parser Text -> Parser Text
 
 module Data.Makefile.Parse
 
@@ -161,7 +176,7 @@ parseMakefile :: IO (Either String Makefile)
 
 -- | Parse the specified file as a makefile.
 parseAsMakefile :: FilePath -> IO (Either String Makefile)
-parseMakefileContents :: ByteString -> Either String Makefile
+parseMakefileContents :: Text -> Either String Makefile
 
 -- | Parser for a makefile
 makefile :: Parser Makefile
@@ -197,7 +212,7 @@ dependency :: Parser Dependency
 --   &gt;&gt;&gt; Atto.parseOnly lazyVar "CFLAGS=-c -Wall"
 --   Right "CFLAGS"
 --   </pre>
-lazyVar :: Parser ByteString
+lazyVar :: Parser Text
 
 -- | Parser for variable name in declaration (immediate set, <tt>var :=
 --   x</tt>)
@@ -206,7 +221,7 @@ lazyVar :: Parser ByteString
 --   &gt;&gt;&gt; Atto.parseOnly immVar "CFLAGS:=-c -Wall"
 --   Right "CFLAGS"
 --   </pre>
-immVar :: Parser ByteString
+immVar :: Parser Text
 
 -- | Parser for a comment (the comment starts with the hashtag)
 --   
@@ -214,16 +229,16 @@ immVar :: Parser ByteString
 --   &gt;&gt;&gt; Atto.parseOnly comment "# I AM A COMMENT"
 --   Right " I AM A COMMENT"
 --   </pre>
-comment :: Parser ByteString
+comment :: Parser Text
 
 module Data.Makefile.Render.Internal
 writeMakefile :: FilePath -> Makefile -> IO ()
-encodeMakefile :: Makefile -> ByteString
+encodeMakefile :: Makefile -> Text
 renderMakefile :: Makefile -> Builder
 renderEntry :: Entry -> Builder
 renderDep :: Dependency -> Builder
 renderCmd :: Command -> Builder
 
 module Data.Makefile.Render
-encodeMakefile :: Makefile -> ByteString
+encodeMakefile :: Makefile -> Text
 writeMakefile :: FilePath -> Makefile -> IO ()
