@@ -48,23 +48,16 @@ entry = many' emptyLine *> (assignment <|> rule)
 assignment :: Parser Entry
 assignment =
   Assignment
-    <$> (stripBS <$> (lazyVar <|> immVar))
-    <*> (stripBS <$> toLineEnd1)
-  -- XXX: temporary, unefficient function to strip a 'ByteString' until
-  -- https://github.com/haskell/bytestring/pull/121 is merged
-  where
-    stripBS :: B.ByteString -> B.ByteString
-    stripBS =
-      B.reverse
-      . C.dropWhile isSpace
-      . B.reverse . C.dropWhile isSpace
-
+    <$> stripped (lazyVar <|> immVar)
+    <*> stripped toLineEnd1
 
 -- | Parser for an entire rule
 rule :: Parser Entry
-rule = Rule <$> target
-            <*> (many' dependency <* nextLine)
-            <*> many' command
+rule =
+  Rule
+    <$> target
+    <*> ((many' dependency <* nextLine) <|> pure [])
+    <*> many' command
 
 -- | Parser for a command
 command :: Parser Command
@@ -74,7 +67,7 @@ command = Command <$> (many' emptyLine *> Atto.char8 '\t'
 
 -- | Parser for a (rule) target
 target :: Parser Target
-target = Target <$> (Atto.takeWhile (/= ':') <* Atto.char8 ':')
+target = Target <$> stripped (Atto.takeWhile (/= ':') <* Atto.char8 ':')
 
 -- | Parser for a (rule) dependency
 dependency :: Parser Dependency
@@ -121,3 +114,19 @@ isSpaceChar c = c == ' '
 
 toLineEnd1 :: Parser B.ByteString
 toLineEnd1 = Atto.takeWhile1 (`notElem` ['\n', '#'])
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+-- XXX: temporary, unefficient function to strip a 'ByteString' until
+-- https://github.com/haskell/bytestring/pull/121 is merged
+stripBS :: B.ByteString -> B.ByteString
+stripBS =
+  B.reverse
+  . C.dropWhile isSpace
+  . B.reverse . C.dropWhile isSpace
+
+
+stripped :: Parser B.ByteString -> Parser B.ByteString
+stripped = fmap stripBS

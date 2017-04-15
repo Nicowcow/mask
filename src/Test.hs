@@ -69,6 +69,10 @@ main = do
     withMakefileContents
       "foo = bar"
       (assertAssignments [("foo", "bar")])
+    withMakefileContents "foo: bar" (assertTargets ["foo"])
+    withMakefileContents
+      "foo : bar"
+      (assertTargets ["foo"])
 
 withMakefileContents :: ByteString -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
