@@ -56,14 +56,12 @@ rule :: Parser Entry
 rule =
   Rule
     <$> target
-    <*> ((many' dependency <* nextLine) <|> pure [])
-    <*> many' command
+    <*> many' dependency
+    <*> many' (many' emptyLine *> command)
 
 -- | Parser for a command
 command :: Parser Command
-command = Command <$> (many' emptyLine *> Atto.char '\t'
-                                       *> toLineEnd
-                                       <* nextLine)
+command = Command <$> (Atto.char '\t' *> toEscapedLineEnd)
 
 -- | Parser for a (rule) target
 target :: Parser Target
@@ -71,8 +69,16 @@ target = Target <$> stripped (Atto.takeWhile (/= ':') <* Atto.char ':')
 
 -- | Parser for a (rule) dependency
 dependency :: Parser Dependency
-dependency = Dependency <$> (Atto.takeWhile (== ' ')
-                         *> Atto.takeWhile1 (`notElem` [' ', '\n', '#']))
+dependency = Dependency <$> (sameLine <|> newLine)
+  where
+    sameLine =
+      Atto.takeWhile (== ' ')
+        *> Atto.takeWhile1 (`notElem` [' ', '\n', '#', '\\'])
+    newLine =
+      Atto.takeWhile (== ' ')
+        *> Atto.char '\\'
+        *> Atto.char '\n'
+        *> (sameLine <|> newLine)
 
 -- | Parser for variable name in declaration (lazy set, @var = x@)
 --

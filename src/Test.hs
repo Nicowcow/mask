@@ -143,8 +143,41 @@ main = do
       )
       (assertAssignments
         [("SUBDIRS", "anna bspt cacheprof compress compress2 fem")])
-
-
+    withMakefileContents
+      (T.pack $ unlines
+        [ "foo: anna bspt cacheprof \\"
+        , "  compress compress2 fem"
+        ]
+      )
+      (assertMakefile
+        Makefile
+          { entries =
+              [ Rule
+                  "foo"
+                  [ "anna"
+                  , "bspt"
+                  , "cacheprof"
+                  , "compress"
+                  , "compress2"
+                  , "fem"
+                  ] []
+              ]
+          }
+        )
+    withMakefileContents
+      (T.pack $ unlines
+          [ "foo:"
+          , "\tcd dir/ && \\"
+          , "   ls"
+          ]
+      )
+      (assertMakefile
+        Makefile
+          { entries =
+              [ Rule "foo" [] ["cd dir/ && ls"]
+              ]
+          }
+        )
 
 withMakefileContents :: T.Text -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
