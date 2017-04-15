@@ -2,6 +2,7 @@
 
 module Data.Makefile.Parse.Internal where
 
+import Control.Monad
 import           Control.Applicative              ((<|>))
 import           Data.Attoparsec.Text
 import           Data.Makefile
@@ -48,7 +49,7 @@ assignment :: Parser Entry
 assignment =
   Assignment
     <$> stripped (lazyVar <|> immVar)
-    <*> stripped toLineEnd
+    <*> toEscapedLineEnd -- toEscapedLineEnd strips
 
 -- | Parser for an entire rule
 rule :: Parser Entry
@@ -70,7 +71,7 @@ target = Target <$> stripped (Atto.takeWhile (/= ':') <* Atto.char ':')
 
 -- | Parser for a (rule) dependency
 dependency :: Parser Dependency
-dependency = Dependency <$> (Atto.takeWhile isSpaceChar
+dependency = Dependency <$> (Atto.takeWhile (== ' ')
                          *> Atto.takeWhile1 (`notElem` [' ', '\n', '#']))
 
 -- | Parser for variable name in declaration (lazy set, @var = x@)
@@ -108,11 +109,26 @@ emptyLine = Atto.takeWhile (`elem` ['\t', ' ']) *>
             Atto.char '\n' *>
             pure ()
 
-isSpaceChar :: Char -> Bool
-isSpaceChar c = c == ' '
-
 toLineEnd :: Parser T.Text
 toLineEnd = Atto.takeWhile (`notElem` ['\n', '#'])
+
+-- | Get the contents until the end of the (potentially multi) line. Multiple
+-- lines are separated by a @\\@ char and individual lines will be stripped and
+-- spaces will be interspersed.
+--
+-- >>> Atto.parseOnly toEscapedLineEnd "foo bar \\\n baz"
+-- Right "foo bar baz"
+--
+-- >>> Atto.parseOnly toEscapedLineEnd "foo \t\\\n bar \\\n baz \\\n \t"
+-- Right "foo bar baz"
+toEscapedLineEnd :: Parser T.Text
+toEscapedLineEnd = (T.unwords . filter (not . T.null)) <$> go
+  where
+    go = do
+      l <- toLineEnd <* (void (Atto.char '\n') <|> pure ())
+      case T.stripSuffix "\\" l of
+        Nothing -> return [T.strip l]
+        Just l' -> (T.strip l':) <$> go
 
 -------------------------------------------------------------------------------
 -- Helpers

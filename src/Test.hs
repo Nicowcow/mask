@@ -88,6 +88,63 @@ main = do
               ]
           }
         )
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar" ]
+      )
+      (assertAssignments [("var", "foo bar")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar\\"
+        , "baz"
+        ]
+      )
+      (assertAssignments [("var", "foo bar baz")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar    \\"
+        , "baz"
+        ]
+      )
+      (assertAssignments [("var", "foo bar baz")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar\\"
+        , "   baz"
+        ]
+      )
+      (assertAssignments [("var", "foo bar baz")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar    \\"
+        , "   baz"
+        ]
+      )
+      (assertAssignments [("var", "foo bar baz")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar    \\"
+        , "\tbaz"
+        ]
+      )
+      (assertAssignments [("var", "foo bar baz")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "var=foo bar  \t  \\"
+        , "  \t  baz"
+        ]
+      )
+      (assertAssignments [("var", "foo bar baz")])
+    withMakefileContents
+      (T.pack $ unlines
+        [ "SUBDIRS=anna bspt cacheprof \\"
+        , "        compress compress2 fem"
+        ]
+      )
+      (assertAssignments
+        [("SUBDIRS", "anna bspt cacheprof compress compress2 fem")])
+
+
 
 withMakefileContents :: T.Text -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
