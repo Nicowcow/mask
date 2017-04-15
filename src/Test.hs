@@ -8,11 +8,10 @@ import Test.DocTest (doctest)
 import Data.Monoid
 
 import Control.Monad
-import Data.ByteString     hiding (any)
 import Data.Makefile
 import Data.Makefile.Parse
 import Data.Makefile.Render
-import qualified Data.ByteString.Char8 as C8
+import qualified Data.Text as T
 
 main :: IO ()
 main = do
@@ -76,7 +75,7 @@ main = do
       "foo : bar"
       (assertTargets ["foo"])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var="
         , "foo: bar"
         ]
@@ -90,7 +89,7 @@ main = do
           }
         )
 
-withMakefileContents :: ByteString -> (Makefile -> IO ()) -> IO ()
+withMakefileContents :: T.Text -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
   a $ fromRight (parseMakefileContents contents)
 
@@ -109,10 +108,10 @@ assertMakefile m1 m2 =
 assertTargets :: [Target] -> Makefile -> IO ()
 assertTargets ts m = mapM_ (`assertTarget` m) ts
 
-assertAssignments :: [(ByteString, ByteString)] -> Makefile -> IO ()
+assertAssignments :: [(T.Text, T.Text)] -> Makefile -> IO ()
 assertAssignments as m = mapM_ (`assertAssignment` m) as
 
-assertAssignment :: (ByteString, ByteString) -> Makefile -> IO ()
+assertAssignment :: (T.Text, T.Text) -> Makefile -> IO ()
 assertAssignment (n, v) (Makefile m) = unless (any hasAssignment m) $
     error ("Assignment " ++ show (n, v) ++ " wasn't found in Makefile " ++ show m)
   where hasAssignment (Assignment n' v') = n == n' && v == v'
