@@ -19,7 +19,18 @@ renderMakefile :: Makefile -> Builder
 renderMakefile (Makefile es ) = mconcat [renderEntry e <> singleton '\n' | e <- es]
 
 renderEntry :: Entry -> Builder
-renderEntry (Assignment key value ) = fromText key <> singleton '=' <> fromText value
+renderEntry (Assignment RecursiveAssign key value ) =
+  fromText key <> singleton '=' <> fromText value
+renderEntry (Assignment SimpleAssign key value ) =
+  fromText key <> fromText ":=" <> fromText value
+renderEntry (Assignment SimplePosixAssign key value ) =
+  fromText key <> fromText "::=" <> fromText value
+renderEntry (Assignment ConditionalAssign key value ) =
+  fromText key <> fromText "?=" <> fromText value
+renderEntry (Assignment ShellAssign key value ) =
+  fromText key <> fromText "!=" <> fromText value
+renderEntry (Assignment AppendAssign key value ) =
+  fromText key <> fromText "+=" <> fromText value
 renderEntry (Rule (Target t) ds cmds) =
   fromText t <> singleton ':' <>
   mconcat [singleton ' ' <> renderDep d | d <- ds] <>

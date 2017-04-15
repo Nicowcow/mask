@@ -42,7 +42,23 @@ data Makefile = Makefile { entries :: [Entry] } deriving (Show, Eq)
 -- | A makefile entry, either a rule @(target: dep1 dep1; commands)@ or a
 -- variable assignment (@hello = world@ or @hello := world@)
 data Entry = Rule Target [Dependency] [Command]
-           | Assignment T.Text T.Text deriving (Show, Eq)
+           | Assignment AssignmentType T.Text T.Text
+           deriving (Show, Eq)
+
+data AssignmentType
+  = RecursiveAssign
+    -- ^ foo = bar
+  | SimpleAssign
+    -- ^ foo := bar
+  | SimplePosixAssign
+    -- ^ foo ::= bar
+  | ConditionalAssign
+    -- ^ foo ?= bar
+  | ShellAssign
+    -- ^ foo != bar
+  | AppendAssign
+    -- ^ foo += bar
+  deriving (Show, Eq, Enum, Bounded)
 
 -- | Makefile target (@foo@ in the example above)
 newtype Target = Target T.Text deriving (Show, Eq, IsString)
