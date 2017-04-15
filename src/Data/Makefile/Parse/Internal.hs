@@ -121,14 +121,14 @@ toLineEnd = Atto.takeWhile (`notElem` ['\n', '#'])
 --
 -- >>> Atto.parseOnly toEscapedLineEnd "foo \t\\\n bar \\\n baz \\\n \t"
 -- Right "foo bar baz"
-toEscapedLineEnd :: Parser B.ByteString
-toEscapedLineEnd = (C.unwords . filter (not . B.null)) <$> go
+toEscapedLineEnd :: Parser T.Text
+toEscapedLineEnd = (T.unwords . filter (not . T.null)) <$> go
   where
     go = do
       l <- toLineEnd <* (void (Atto.char '\n') <|> pure ())
-      case B.stripSuffix "\\" l of
-        Nothing -> return [stripBS l]
-        Just l' -> (stripBS l':) <$> go
+      case T.stripSuffix "\\" l of
+        Nothing -> return [T.strip l]
+        Just l' -> (T.strip l':) <$> go
 
 -------------------------------------------------------------------------------
 -- Helpers

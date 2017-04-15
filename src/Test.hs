@@ -89,54 +89,54 @@ main = do
           }
         )
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar" ]
       )
       (assertAssignments [("var", "foo bar")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar\\"
         , "baz"
         ]
       )
       (assertAssignments [("var", "foo bar baz")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar    \\"
         , "baz"
         ]
       )
       (assertAssignments [("var", "foo bar baz")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar\\"
         , "   baz"
         ]
       )
       (assertAssignments [("var", "foo bar baz")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar    \\"
         , "   baz"
         ]
       )
       (assertAssignments [("var", "foo bar baz")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar    \\"
         , "\tbaz"
         ]
       )
       (assertAssignments [("var", "foo bar baz")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "var=foo bar  \t  \\"
         , "  \t  baz"
         ]
       )
       (assertAssignments [("var", "foo bar baz")])
     withMakefileContents
-      (C8.pack $ unlines
+      (T.pack $ unlines
         [ "SUBDIRS=anna bspt cacheprof \\"
         , "        compress compress2 fem"
         ]
