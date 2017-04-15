@@ -19,7 +19,6 @@ renderMakefile :: Makefile -> Builder
 renderMakefile (Makefile es ) = mconcat [renderEntry e <> singleton '\n' | e <- es]
 
 renderEntry :: Entry -> Builder
--- TODO
 renderEntry (Assignment RecursiveAssign key value ) =
   fromText key <> singleton '=' <> fromText value
 renderEntry (Assignment SimpleAssign key value ) =
