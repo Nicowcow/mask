@@ -1,15 +1,18 @@
 name:                   makefile
-version:                1.0.0.0
+version:                1.0.0.1
 synopsis:            Simple Makefile parser and generator
 description:
   This package provides a few @Attoparser@ parsers and convenience functions
-  for parsing Makefiles.
+  for parsing and generating Makefiles.
 
   The datatypes used for describing Makefiles are located in 'Data.Makefile'.
   The parsers and parsing functions are located in 'Data.Makefile.Parse'.
+  The generating and encoding functions are located in 'Data.Makefile.Render'.
 
   To parse a Makefile in the current folder, simply run 'parseMakefile'. To
-  parse a Makefile located at @path@, run 'parseAsMakefile' @path@.
+  parse a Makefile located at @path@, run 'parseAsMakefile' @path@. To parse a
+  Makefile from a Text @txt@, run 'parseMakefileContents txt`.
+  To encode a @Makefile@, run 'encodeMakefile'.
 
 homepage:               http://github.com/nmattia/mask
 license:                MIT
