@@ -49,7 +49,7 @@ assignment :: Parser Entry
 assignment =
   Assignment
     <$> stripped (lazyVar <|> immVar)
-    <*> stripped toLineEnd1
+    <*> stripped toLineEnd
 
 -- | Parser for an entire rule
 rule :: Parser Entry
@@ -62,7 +62,7 @@ rule =
 -- | Parser for a command
 command :: Parser Command
 command = Command <$> (many' emptyLine *> Atto.char8 '\t'
-                                       *> toLineEnd1
+                                       *> toLineEnd
                                        <* nextLine)
 
 -- | Parser for a (rule) target
@@ -112,8 +112,8 @@ emptyLine = Atto.takeWhile (`elem` ['\t', ' ']) *>
 isSpaceChar :: Char -> Bool
 isSpaceChar c = c == ' '
 
-toLineEnd1 :: Parser B.ByteString
-toLineEnd1 = Atto.takeWhile1 (`notElem` ['\n', '#'])
+toLineEnd :: Parser B.ByteString
+toLineEnd = Atto.takeWhile (`notElem` ['\n', '#'])
 
 -------------------------------------------------------------------------------
 -- Helpers
