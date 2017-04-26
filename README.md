@@ -4,7 +4,7 @@
 
 Simple Haskell Makefile parser and generator. The project is available on
 hackage [(latest)](http://hackage.haskell.org/package/makefile) and
-documentation for `master` can be found [here](http://docs.nmattia.com/mask/).
+documentation for `master` can be found [here](http://nmattia.github.io/mask/).
 
 # Example
 
