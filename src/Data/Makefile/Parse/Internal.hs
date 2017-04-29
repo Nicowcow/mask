@@ -82,6 +82,12 @@ takeWhileM a = (T.pack . reverse) <$> go []
       True <- a c
       go (c:cs) <|> pure (c:cs)
 
+
+-- | Parse a variable name, not consuming any of the assignment operator. See
+-- also 'assignment'.
+--
+-- >>> Atto.parseOnly variableName "foo!?!= bar "
+-- Right "foo!?"
 variableName :: Parser T.Text
 variableName = stripped $ takeWhileM go
   where
@@ -100,6 +106,11 @@ variableName = stripped $ takeWhileM go
     go '=' = return False
     go _c = return True
 
+-- | Parse an assignment type, not consuming any of the assigned value. See
+-- also 'assignment'.
+--
+-- >>> Atto.parseOnly assignmentType "!= bar "
+-- Right ShellAssign
 assignmentType :: Parser AssignmentType
 assignmentType =
   ("=" *> pure RecursiveAssign)
@@ -137,20 +148,6 @@ dependency = Dependency <$> (sameLine <|> newLine)
         *> Atto.char '\\'
         *> Atto.char '\n'
         *> (sameLine <|> newLine)
-
--- | Parser for variable name in declaration (lazy set, @var = x@)
---
--- >>> Atto.parseOnly lazyVar "CFLAGS=-c -Wall"
--- Right "CFLAGS"
-lazyVar :: Parser T.Text
-lazyVar = Atto.takeWhile1 (`notElem` ['=', '\n', '#']) <* Atto.char '='
-
--- | Parser for variable name in declaration (immediate set, @var := x@)
---
--- >>> Atto.parseOnly immVar "CFLAGS:=-c -Wall"
--- Right "CFLAGS"
-immVar :: Parser T.Text
-immVar = Atto.takeWhile1 (`notElem` [':', '\n', '#']) <* Atto.string ":="
 
 -- | Parser for a comment (the comment starts with the hashtag)
 --

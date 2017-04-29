@@ -7,12 +7,14 @@ module Data.Makefile.Parse
   , I.makefile
   , I.entry
   , I.assignment
+  , I.variableName
+  , I.assignmentType
   , I.rule
   , I.command
   , I.target
   , I.dependency
-  , I.lazyVar
-  , I.immVar
-  , I.comment) where
+  , I.comment
+  , I.toEscapedLineEnd
+  ) where
 
 import qualified Data.Makefile.Parse.Internal as I
