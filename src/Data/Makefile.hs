@@ -22,9 +22,10 @@ foo: bar
 @
 Makefile {
   entries =
-    [ Assignment "hello " " world"
-    , Rule (Target "foo") [Dependency "bar"] [Command "baz"] ]
-    })
+    [ Assignment RecursiveAssign "hello" "world"
+    , Rule (Target "foo") [Dependency "bar"] [Command "baz"]
+    ]
+  }
 @
 
 -}
