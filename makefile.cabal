@@ -57,7 +57,7 @@ test-suite test
                       , attoparsec   >= 0.12
                       , text         >= 1.1
                       , doctest      >= 0.9
-                      , Glob         >= 0.7
+                      , Glob         >= 0.7 && <= 0.9
                       , QuickCheck
                       , makefile
   other-modules:        Data.Makefile
