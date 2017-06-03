@@ -56,6 +56,8 @@ before_install:
  - case "$BUILD" in
      stack)
        export PATH=$HOME/.local/bin:/opt/ghc/$GHCVER/bin:$PATH;;
+     stack-osx)
+       export PATH=$HOME/.local/bin:$PATH;;
      cabal)
        export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH;;
    esac
@@ -67,7 +69,7 @@ install:
      stack)
        stack --system-ghc --compiler ghc-"$GHCVER" --no-terminal test --only-dependencies;;
      stack-osx)
-       stack --no-terminal test --only-dependencies;;
+       stack --no-system-ghc --no-terminal test --only-dependencies;;
      cabal)
        cabal --version;
        travis_retry cabal update;
@@ -82,7 +84,7 @@ script:
      stack)
        stack --system-ghc --compiler ghc-"$GHCVER" --no-terminal test --haddock --no-haddock-deps;;
      stack-osx)
-       stack --no-terminal test --haddock --no-haddock-deps;;
+       stack --no-system-ghc --no-terminal test --haddock --no-haddock-deps;;
      cabal)
        cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Werror";
        cabal build;
