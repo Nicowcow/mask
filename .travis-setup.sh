@@ -19,13 +19,14 @@ fetch_stack_linux() {
 case "$BUILD" in
   stack)
     mkdir -p ~/.local/bin;
-    if [ `uname` = "Darwin" ]; then
-      travis_retry fetch_stack_osx
-    else
-      travis_retry fetch_stack_linux
-    fi;
+    travis_retry fetch_stack_linux
 
-    travis_retry stack --no-terminal setup;
+    travis_retry stack --system-ghc --no-terminal setup;
+    ;;
+  stack-osx)
+    mkdir -p ~/.local/bin;
+    travis_retry fetch_stack_osx
+    travis_retry stack --no-system-ghc --no-terminal setup;
     ;;
   cabal)
 mkdir -p $HOME/.cabal
