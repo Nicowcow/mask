@@ -32,9 +32,9 @@ Makefile {
 
 module Data.Makefile where
 
-import           Data.String                      (IsString)
+import           Data.String (IsString)
 
-import qualified Data.Text as T
+import qualified Data.Text   as T
 
 
 -- | A Makefile object, a list of makefile entries
@@ -44,7 +44,15 @@ data Makefile = Makefile { entries :: [Entry] } deriving (Show, Eq)
 -- variable assignment (@hello = world@ or @hello := world@)
 data Entry = Rule Target [Dependency] [Command]
            | Assignment AssignmentType T.Text T.Text
+           | Comment CommentType
            deriving (Show, Eq)
+
+data CommentType
+  = EmptyLine
+    -- ^ an empty line
+  | CommentText T.Text
+    -- ^ command text
+  deriving (Show, Eq)
 
 data AssignmentType
   = RecursiveAssign

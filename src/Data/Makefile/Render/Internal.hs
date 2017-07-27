@@ -3,9 +3,9 @@
 module Data.Makefile.Render.Internal where
 import           Data.Makefile
 import           Data.Monoid
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.IO as TL
-import Data.Text.Lazy.Builder
+import qualified Data.Text.Lazy         as TL
+import           Data.Text.Lazy.Builder
+import qualified Data.Text.Lazy.IO      as TL
 
 writeMakefile :: FilePath -> Makefile -> IO ()
 writeMakefile f m = do
@@ -36,6 +36,10 @@ renderEntry (Rule (Target t) ds cmds) =
   mconcat [singleton ' ' <> renderDep d | d <- ds] <>
   singleton '\n' <>
   mconcat [renderCmd cmd <> singleton '\n' | cmd <- cmds]
+renderEntry (Comment EmptyLine) =
+  fromText "#"
+renderEntry (Comment (CommentText text)) =
+  fromText "# " <> fromText text
 
 renderDep :: Dependency -> Builder
 renderDep (Dependency dep ) = fromText dep
