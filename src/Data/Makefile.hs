@@ -32,9 +32,9 @@ Makefile {
 
 module Data.Makefile where
 
-import           Data.String (IsString)
+import           Data.String                      (IsString)
 
-import qualified Data.Text   as T
+import qualified Data.Text as T
 
 
 -- | A Makefile object, a list of makefile entries

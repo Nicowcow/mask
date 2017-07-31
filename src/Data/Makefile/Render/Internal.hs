@@ -3,10 +3,10 @@
 module Data.Makefile.Render.Internal where
 import           Data.Makefile
 import           Data.Monoid
-import qualified Data.Text              as T
-import qualified Data.Text.Lazy         as TL
-import           Data.Text.Lazy.Builder
-import qualified Data.Text.Lazy.IO      as TL
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.IO as TL
+import Data.Text.Lazy.Builder
 
 writeMakefile :: FilePath -> Makefile -> IO ()
 writeMakefile f m = do
