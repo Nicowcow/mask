@@ -3,6 +3,7 @@
 module Data.Makefile.Render.Internal where
 import           Data.Makefile
 import           Data.Monoid
+import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.IO as TL
 import Data.Text.Lazy.Builder
@@ -36,6 +37,13 @@ renderEntry (Rule (Target t) ds cmds) =
   mconcat [singleton ' ' <> renderDep d | d <- ds] <>
   singleton '\n' <>
   mconcat [renderCmd cmd <> singleton '\n' | cmd <- cmds]
+renderEntry EmptyLine =
+  fromText ""
+renderEntry (Comment text) =
+  let texts = map (\t -> fromText "# " <> fromText t ) $ T.lines text
+      con []     = mempty
+      con (x:xs) = foldl (\a b -> a <> fromText "\n" <> b) x xs
+  in con texts
 
 renderDep :: Dependency -> Builder
 renderDep (Dependency dep ) = fromText dep
