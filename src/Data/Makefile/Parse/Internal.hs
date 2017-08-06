@@ -1,12 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Data.Makefile.Parse.Internal where
 
 import Control.Monad
-import           Control.Applicative
+import Data.Foldable
 import           Data.Attoparsec.Text
 import           Data.Makefile
+import Data.Monoid
+import Control.Applicative
 
 import qualified Data.Attoparsec.Text as Atto
 import qualified Data.Text as T
@@ -28,6 +31,9 @@ parseAsMakefile f = Atto.parseOnly makefile <$> T.readFile f
 parseMakefileContents :: T.Text -> Either String Makefile
 parseMakefileContents = Atto.parseOnly makefile
 
+-- | Similar to 'Atto.parseOnly' but fails if all input has not been consumed.
+parseAll :: Parser a -> T.Text -> Either String a
+parseAll p = Atto.parseOnly (p <* Atto.endOfInput)
 --------------------------------------------------------------------------------
 -- Parsers
 
@@ -38,7 +44,7 @@ makefile = Makefile <$> many' entry
 
 -- | Parser for a makefile entry (either a rule or a variable assignment)
 entry :: Parser Entry
-entry = many' emptyLine *> (assignment <|> rule)
+entry = assignment <|> rule <|> otherLine
 
 -- | Parser of variable assignment (see 'Assignment'). Note that leading and
 -- trailing whitespaces will be stripped both from the variable name and
@@ -47,22 +53,22 @@ entry = many' emptyLine *> (assignment <|> rule)
 -- Note that this tries to follow GNU make's (crazy) behavior when it comes to
 -- variable names and assignment operators.
 --
--- >>> Atto.parseOnly assignment "foo = bar "
+-- >>> parseAll assignment "foo = bar "
 -- Right (Assignment RecursiveAssign "foo" "bar")
 --
--- >>> Atto.parseOnly assignment "foo := bar "
+-- >>> parseAll assignment "foo := bar "
 -- Right (Assignment SimpleAssign "foo" "bar")
 --
--- >>> Atto.parseOnly assignment "foo ::= bar "
+-- >>> parseAll assignment "foo ::= bar "
 -- Right (Assignment SimplePosixAssign "foo" "bar")
 --
--- >>> Atto.parseOnly assignment "foo?= bar "
+-- >>> parseAll assignment "foo?= bar "
 -- Right (Assignment ConditionalAssign "foo" "bar")
 --
--- >>> Atto.parseOnly assignment "foo??= bar "
+-- >>> parseAll assignment "foo??= bar "
 -- Right (Assignment ConditionalAssign "foo?" "bar")
 --
--- >>> Atto.parseOnly assignment "foo!?!= bar "
+-- >>> parseAll assignment "foo!?!= bar "
 -- Right (Assignment ShellAssign "foo!?" "bar")
 assignment :: Parser Entry
 assignment = do
@@ -104,6 +110,7 @@ variableName = stripped $ takeWhileM go
     go ':' = return False
     go '#' = return False
     go '=' = return False
+    go (Atto.isEndOfLine -> True) = return False
     go _c = return True
 
 -- | Parse an assignment type, not consuming any of the assigned value. See
@@ -125,16 +132,53 @@ rule :: Parser Entry
 rule =
   Rule
     <$> target
-    <*> many' dependency
-    <*> many' (many' emptyLine *> command)
+    <*> (many' dependency <* (Atto.takeWhile (not.Atto.isEndOfLine) <* endOfLine'))
+    <*> many' command
+
+-- | Succeeds on 'Atto.endOfLine' (line end) or if the end of input is reached.
+endOfLine' :: Parser ()
+endOfLine' =
+    Atto.endOfLine <|> (Atto.atEnd >>= check)
+  where
+    check True = pure ()
+    check False = mzero
 
 -- | Parser for a command
 command :: Parser Command
-command = Command <$> (Atto.char '\t' *> toEscapedLineEnd)
+command = Command <$> recipeLine
+
+recipeLine :: Parser T.Text
+recipeLine =
+    Atto.char '\t' *> recipeLineContents ""
+  where
+    recipeLineContents pre = do
+      cur <- Atto.takeWhile $ \c ->
+          c /= '\\' && not (Atto.isEndOfLine c)
+      asum
+        [ -- Multi-line
+          Atto.char '\\'
+            *> Atto.endOfLine
+            *> (void (Atto.char '\t') <|> pure ())
+            *> recipeLineContents (pre <> cur <> "\\\n")
+        , -- Just EOL or EOF
+          endOfLine' *> pure (pre <> cur)
+        , -- It was just a backslash within a recipe line, we're not doing
+          -- anything particular
+          Atto.char '\\' *> recipeLineContents (pre <> cur <> "\\")
+        ]
 
 -- | Parser for a (rule) target
 target :: Parser Target
-target = Target <$> stripped (Atto.takeWhile (/= ':') <* Atto.char ':')
+target = Target <$> (go $ stripped (Atto.takeWhile (/= ':') <* Atto.char ':'))
+  where
+    -- takes care of some makefile target quirks
+    go :: Parser a -> Parser a
+    go p =
+        Atto.takeWhile (liftA2 (||) (== ' ') (== '\t'))
+          *> (Atto.peekChar >>= \case
+              Just '#' -> mzero
+              Just '\n' -> mzero
+              _ -> p)
 
 -- | Parser for a (rule) dependency
 dependency :: Parser Dependency
@@ -149,26 +193,27 @@ dependency = Dependency <$> (sameLine <|> newLine)
         *> Atto.char '\n'
         *> (sameLine <|> newLine)
 
--- | Parser for a comment (the comment starts with the hashtag)
+-- | Catch all, used for
+--    * comments, empty lines
+--    * lines that failed to parse
 --
--- >>> Atto.parseOnly comment "# I AM A COMMENT"
--- Right " I AM A COMMENT"
-comment :: Parser T.Text
-comment = Atto.char '#' *> Atto.takeWhile (/= '\n')
-
--- | Consume a newline character (@'\n'@)
-nextLine :: Parser ()
-nextLine = Atto.takeWhile (/= '\n') *> Atto.char '\n' *> pure ()
-
--- | Consume an empty line (potentially containing spaces and/or tabs).
+-- >>> parseAll otherLine "# I AM A COMMENT\n"
+-- Right (OtherLine "# I AM A COMMENT")
 --
--- >>> Atto.parseOnly emptyLine "\t\t   \t   \t\n"
--- Right ()
-emptyLine :: Parser ()
-emptyLine = Atto.takeWhile (`elem` ['\t', ' ']) *>
-            many' comment *>
-            Atto.char '\n' *>
-            pure ()
+-- Ensure all 'Entry's consume the end of line:
+-- >>> parseAll otherLine "\n"
+-- Right (OtherLine "")
+--
+otherLine :: Parser Entry
+otherLine = OtherLine <$> go
+  where
+    go = asum
+      [ -- Typical case of empty line
+        Atto.endOfLine *> pure ""
+      , -- Either a line of spaces and/or comment, or a line that we failed to
+        -- parse
+        Atto.takeWhile1 (not . Atto.isEndOfLine) <* Atto.endOfLine
+      ]
 
 toLineEnd :: Parser T.Text
 toLineEnd = Atto.takeWhile (`notElem` ['\n', '#'])
