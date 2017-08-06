@@ -12,6 +12,9 @@ import Data.Makefile
 import Data.Makefile.Parse
 import Data.Makefile.Render
 import Test.QuickCheck
+import Test.Tasty (defaultMain, testGroup, TestTree)
+import Test.Tasty.HUnit (testCase)
+import Test.Tasty.QuickCheck (testProperty)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 
@@ -38,174 +41,14 @@ instance Arbitrary Entry where
 instance Arbitrary Makefile where
   arbitrary = Makefile <$> arbitrary
 
-
 main :: IO ()
-main = do
-    doc
-    withMakefile "test-data/basic/Makefile1" $ \m -> assertTarget "foo" m
-    withMakefile "test-data/basic/Makefile2" $ \m -> do
-        assertTargets [ "all"
-                      , "hello"
-                      , "main.o"
-                      , "factorial.o"
-                      , "hello.o"
-                      , "clean"] m
-        assertAssignment ("CC", "g++") m
-    withMakefile "test-data/elfparse/Makefile" $ \m -> do
-        assertTargets [ "default"
-                      , "is_perl_recent_enough"
-                      , "all"
-                      , "clean"
-                      , "clean_not_caches"
-                      , "${SRCP6}/STD.pmc"
-                      , "lex.is_current"
-                      , "${STD_BLUE_CACHEDIR}.is_current"
-                      , "${STD_RED_CACHEDIR}.is_current"
-                      , "IRx1_FromAST2.pm"
-                      , "elfblue"
-                      , "elfrx"
-                      , "nodes.pm"
-                      , "rx_prelude.pm"
-                      , "rx_prelude_p5.pm"
-                      , "std.pm.p5"
-                      , "STD_green_run.pm.p5"
-                      , "STD_green_run"
-                      , "elfdev"
-                      , "elfdev1"
-                      , "check"
-                      , "check_rx_on_re"
-                      , "check_std_rx_on_re"
-                      , "rerun_std_rx_on_re"
-                      , "check_STD_blue"
-                      , "does_gimme5_memory_problem_still_exist"
-                      , "elfblue_regression_debug"
-                      , "have_STD_red_cache"
-                      , "have_STD_blue_cache" ] m
-        assertAssignments [ ("ELF", "../../elf/elf_h")
-                          , ("ELFDIR", "../../elf/elf_h_src")
-                          , ("SRCP6", "./pugs_src_perl6")
-                          , ("STDPM", "./pugs_src_perl6/STD.pm")
-                          , ("TMP", "deleteme")
-                          {- ... feeling lazy -} ] m
-    withMakefile "test-data/basic/Makefile1" $ \m -> do
-      writeMakefile  "test-data/basic/_Makefile1" m
-      withMakefile "test-data/basic/_Makefile1" $ \mm -> assertMakefile m mm
-    withMakefile "test-data/basic/Makefile2" $ \m -> do
-      writeMakefile  "test-data/basic/_Makefile2" m
-      withMakefile "test-data/basic/_Makefile2" $ \mm -> assertMakefile m mm
-    withMakefileContents
-      "foo = bar"
-      (assertAssignments [("foo", "bar")])
-    withMakefileContents "foo: bar" (assertTargets ["foo"])
-    withMakefileContents
-      "foo : bar"
-      (assertTargets ["foo"])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var="
-        , "foo: bar"
-        ]
-      )
-      (assertMakefile
-        Makefile
-          { entries =
-              [ Assignment RecursiveAssign "var" ""
-              , Rule "foo" ["bar"] []
-              ]
-          }
-        )
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar" ]
-      )
-      (assertAssignments [("var", "foo bar")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar\\"
-        , "baz"
-        ]
-      )
-      (assertAssignments [("var", "foo bar baz")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar    \\"
-        , "baz"
-        ]
-      )
-      (assertAssignments [("var", "foo bar baz")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar\\"
-        , "   baz"
-        ]
-      )
-      (assertAssignments [("var", "foo bar baz")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar    \\"
-        , "   baz"
-        ]
-      )
-      (assertAssignments [("var", "foo bar baz")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar    \\"
-        , "\tbaz"
-        ]
-      )
-      (assertAssignments [("var", "foo bar baz")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "var=foo bar  \t  \\"
-        , "  \t  baz"
-        ]
-      )
-      (assertAssignments [("var", "foo bar baz")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "SUBDIRS=anna bspt cacheprof \\"
-        , "        compress compress2 fem"
-        ]
-      )
-      (assertAssignments
-        [("SUBDIRS", "anna bspt cacheprof compress compress2 fem")])
-    withMakefileContents
-      (T.pack $ unlines
-        [ "foo: anna bspt cacheprof \\"
-        , "  compress compress2 fem"
-        ]
-      )
-      (assertMakefile
-        Makefile
-          { entries =
-              [ Rule
-                  "foo"
-                  [ "anna"
-                  , "bspt"
-                  , "cacheprof"
-                  , "compress"
-                  , "compress2"
-                  , "fem"
-                  ] []
-              ]
-          }
-        )
-    withMakefileContents
-      (T.pack $ unlines
-          [ "foo:"
-          , "\tcd dir/ && \\"
-          , "   ls"
-          ]
-      )
-      (assertMakefile
-        Makefile
-          { entries =
-              [ Rule "foo" [] ["cd dir/ && ls"]
-              ]
-          }
-        )
-    Success{} <- quickCheckResult prop_encodeDecode
-    return ()
+main = defaultMain $ testGroup "makefile tests"
+    [ testCase "doc tests" doc
+    , basicMakefileTests
+    , elfparseMakefileTests
+    , allSyntaxTests
+    , testProperty "encode decode" prop_encodeDecode
+    ]
 
 prop_encodeDecode :: Makefile -> Bool
 prop_encodeDecode m =
@@ -251,3 +94,184 @@ fromRight _ = error "fromRight"
 
 doc :: IO ()
 doc = glob "src/**/*.hs" >>= doctest
+
+basicMakefileTests :: TestTree
+basicMakefileTests = testGroup "basicMakefileTests"
+    [ testCase "Makefile1 targets" $
+        withMakefile "test-data/basic/Makefile1" $ \m -> assertTarget "foo" m
+    , testCase "Makefile2 targets" $
+        withMakefile "test-data/basic/Makefile2" $ \m -> do
+            assertTargets [ "all"
+                          , "hello"
+                          , "main.o"
+                          , "factorial.o"
+                          , "hello.o"
+                          , "clean"] m
+            assertAssignment ("CC", "g++") m
+    , testCase "Makefile1 read/write" $
+        withMakefile "test-data/basic/Makefile1" $ \m -> do
+          writeMakefile  "test-data/basic/_Makefile1" m
+          withMakefile "test-data/basic/_Makefile1" $ \mm ->
+            assertMakefile m mm
+    , testCase "Makefile2 read/write" $
+        withMakefile "test-data/basic/Makefile2" $ \m -> do
+          writeMakefile  "test-data/basic/_Makefile2" m
+          withMakefile "test-data/basic/_Makefile2" $ \mm ->
+            assertMakefile m mm
+    ]
+
+elfparseMakefileTests :: TestTree
+elfparseMakefileTests = testCase "elfparseMakefileTests" $
+    withMakefile "test-data/elfparse/Makefile" $ \m -> do
+        assertTargets [ "default"
+                      , "is_perl_recent_enough"
+                      , "all"
+                      , "clean"
+                      , "clean_not_caches"
+                      , "${SRCP6}/STD.pmc"
+                      , "lex.is_current"
+                      , "${STD_BLUE_CACHEDIR}.is_current"
+                      , "${STD_RED_CACHEDIR}.is_current"
+                      , "IRx1_FromAST2.pm"
+                      , "elfblue"
+                      , "elfrx"
+                      , "nodes.pm"
+                      , "rx_prelude.pm"
+                      , "rx_prelude_p5.pm"
+                      , "std.pm.p5"
+                      , "STD_green_run.pm.p5"
+                      , "STD_green_run"
+                      , "elfdev"
+                      , "elfdev1"
+                      , "check"
+                      , "check_rx_on_re"
+                      , "check_std_rx_on_re"
+                      , "rerun_std_rx_on_re"
+                      , "check_STD_blue"
+                      , "does_gimme5_memory_problem_still_exist"
+                      , "elfblue_regression_debug"
+                      , "have_STD_red_cache"
+                      , "have_STD_blue_cache" ] m
+        assertAssignments [ ("ELF", "../../elf/elf_h")
+                          , ("ELFDIR", "../../elf/elf_h_src")
+                          , ("SRCP6", "./pugs_src_perl6")
+                          , ("STDPM", "./pugs_src_perl6/STD.pm")
+                          , ("TMP", "deleteme")
+                          {- ... feeling lazy -} ] m
+
+allSyntaxTests :: TestTree
+allSyntaxTests = testGroup "syntax tests"
+    [ testCase "simple assignment" $
+        withMakefileContents
+          "foo = bar"
+          (assertAssignments [("foo", "bar")])
+    , testCase "simple target" $
+        withMakefileContents "foo: bar" (assertTargets ["foo"])
+    , testCase "simple assign + target" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var="
+            , "foo: bar"
+            ]
+          )
+          (assertMakefile
+            Makefile
+              { entries =
+                  [ Assignment RecursiveAssign "var" ""
+                  , Rule "foo" ["bar"] []
+                  ]
+              }
+            )
+    , testCase "assign with spaces" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var=foo bar" ]
+          )
+          (assertAssignments [("var", "foo bar")])
+    , testCase "assign escaped" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var=foo bar\\"
+            , "baz"
+            ]
+          )
+          (assertAssignments [("var", "foo bar baz")])
+    , testCase "assign spaces escaped" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var=foo bar    \\"
+            , "baz"
+            ]
+          )
+          (assertAssignments [("var", "foo bar baz")])
+    , testCase "assign space newline" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var=foo bar\\"
+            , "   baz"
+            ]
+          )
+          (assertAssignments [("var", "foo bar baz")])
+    , testCase "assign spaces escaped tab" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var=foo bar    \\"
+            , "\tbaz"
+            ]
+          )
+          (assertAssignments [("var", "foo bar baz")])
+    , testCase "assign spaces tab escaped tab" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "var=foo bar  \t  \\"
+            , "  \t  baz"
+            ]
+          )
+          (assertAssignments [("var", "foo bar baz")])
+    , testCase "assign multiline" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "SUBDIRS=anna bspt cacheprof \\"
+            , "        compress compress2 fem"
+            ]
+          )
+          (assertAssignments
+            [("SUBDIRS", "anna bspt cacheprof compress compress2 fem")])
+    , testCase "assign multiline 2" $
+        withMakefileContents
+          (T.pack $ unlines
+            [ "foo: anna bspt cacheprof \\"
+            , "  compress compress2 fem"
+            ]
+          )
+          (assertMakefile
+            Makefile
+              { entries =
+                  [ Rule
+                      "foo"
+                      [ "anna"
+                      , "bspt"
+                      , "cacheprof"
+                      , "compress"
+                      , "compress2"
+                      , "fem"
+                      ] []
+                  ]
+              }
+            )
+    , testCase "rule" $
+        withMakefileContents
+          (T.pack $ unlines
+              [ "foo:"
+              , "\tcd dir/ && \\"
+              , "   ls"
+              ]
+          )
+          (assertMakefile
+            Makefile
+              { entries =
+                  [ Rule "foo" [] ["cd dir/ && ls"]
+                  ]
+              }
+            )
+    ]
