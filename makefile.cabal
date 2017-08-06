@@ -55,6 +55,9 @@ test-suite test
   main-is:              Test.hs
   build-depends:        base
                       , attoparsec   >= 0.12
+                      , tasty        >= 0.11
+                      , tasty-hunit  >= 0.9
+                      , tasty-quickcheck >= 0.8
                       , text         >= 1.1
                       , doctest      >= 0.9
                       , Glob         >= 0.7 && < 0.9
