@@ -38,15 +38,16 @@ import qualified Data.Text as T
 
 
 -- | A Makefile object, a list of makefile entries
-data Makefile = Makefile { entries :: [Entry] } deriving (Show, Eq)
+data Makefile = Makefile { entries :: [Entry] } deriving (Show, Read, Eq)
 
 -- | A makefile entry, either a rule @(target: dep1 dep1; commands)@ or a
 -- variable assignment (@hello = world@ or @hello := world@)
 data Entry = Rule Target [Dependency] [Command]
            | Assignment AssignmentType T.Text T.Text
-           | Comment T.Text
-           | EmptyLine
-           deriving (Show, Eq)
+           | OtherLine T.Text
+           -- ^ Catch all value for comments, empty lines and lines that failed
+           -- to parse.
+           deriving (Show, Read, Eq)
 
 data AssignmentType
   = RecursiveAssign
@@ -61,13 +62,13 @@ data AssignmentType
     -- ^ foo != bar
   | AppendAssign
     -- ^ foo += bar
-  deriving (Show, Eq, Enum, Bounded)
+  deriving (Show, Read, Eq, Enum, Bounded)
 
 -- | Makefile target (@foo@ in the example above)
-newtype Target = Target T.Text deriving (Show, Eq, IsString)
+newtype Target = Target T.Text deriving (Show, Read, Eq, IsString)
 
 -- | Target dependency (@bar@ in the example above)
-newtype Dependency = Dependency T.Text deriving (Show, Eq, IsString)
+newtype Dependency = Dependency T.Text deriving (Show, Read, Eq, IsString)
 
 -- | Command (@baz@ in the example above)
-newtype Command = Command T.Text deriving (Show, Eq, IsString)
+newtype Command = Command T.Text deriving (Show, Read, Eq, IsString)

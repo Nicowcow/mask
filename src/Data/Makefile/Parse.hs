@@ -13,7 +13,7 @@ module Data.Makefile.Parse
   , I.command
   , I.target
   , I.dependency
-  , I.comment
+  , I.otherLine
   , I.toEscapedLineEnd
   ) where
 

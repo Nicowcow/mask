@@ -68,3 +68,4 @@ test-suite test
                       , Data.Makefile.Parse.Internal
                       , Data.Makefile.Render
                       , Data.Makefile.Render.Internal
+  ghc-options:        -Wall

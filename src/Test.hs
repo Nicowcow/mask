@@ -1,16 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Main (main) where
 
 import "Glob" System.FilePath.Glob (glob)
-import Test.DocTest (doctest)
-import Data.Monoid
-
 import Control.Monad
 import Data.Makefile
 import Data.Makefile.Parse
+import Data.Makefile.Parse.Internal
 import Data.Makefile.Render
+import Data.Makefile.Render.Internal
+import Data.Monoid
+import Test.DocTest (doctest)
 import Test.QuickCheck
 import Test.Tasty (defaultMain, testGroup, TestTree)
 import Test.Tasty.HUnit (testCase)
@@ -18,14 +21,17 @@ import Test.Tasty.QuickCheck (testProperty)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 
+genAZ :: Gen T.Text
+genAZ = T.pack <$> listOf1 (choose ('a', 'z'))
+
 instance Arbitrary Target where
-  arbitrary = pure $ Target "foo"
+  arbitrary = Target <$> genAZ
 
 instance Arbitrary Dependency where
-  arbitrary = pure $ Dependency "bar"
+  arbitrary = Dependency <$> genAZ
 
 instance Arbitrary Command where
-  arbitrary = pure $ Command "baz"
+  arbitrary = Command <$> genAZ
 
 instance Arbitrary AssignmentType where
   arbitrary =
@@ -35,7 +41,9 @@ instance Arbitrary Entry where
   arbitrary =
     oneof
       [ Rule <$> arbitrary <*> arbitrary <*> arbitrary
-      , Assignment <$> arbitrary <*> pure "foo" <*> pure "bar"
+      , Assignment <$> arbitrary <*> genAZ <*> genAZ
+      , (OtherLine . T.cons '#') <$> genAZ
+      , pure $ OtherLine ""
       ]
 
 instance Arbitrary Makefile where
@@ -43,16 +51,31 @@ instance Arbitrary Makefile where
 
 main :: IO ()
 main = defaultMain $ testGroup "makefile tests"
-    [ testCase "doc tests" doc
+    [ testCase "doctest" doc
     , basicMakefileTests
     , elfparseMakefileTests
     , allSyntaxTests
     , testProperty "encode decode" prop_encodeDecode
+    , testProperty "encoded does end with newline" prop_encodeNewline
     ]
 
+isId :: Eq a => (a -> a) -> a -> Bool
+isId f a = f a == a
+
+-- | We ensure that all encoded entries finish with a new line character
+-- (lines/unlines)
+prop_encodeNewline :: Entry -> Bool
+prop_encodeNewline e =
+    let encoded = encodeEntry e
+    in TL.length encoded /= 0 && (TL.last encoded == '\n')
+
 prop_encodeDecode :: Makefile -> Bool
-prop_encodeDecode m =
-  (fromRight $ parseMakefileContents $ TL.toStrict $ encodeMakefile m) == m
+prop_encodeDecode =
+    isId $
+      fromRight
+      . parseMakefileContents
+      . TL.toStrict
+      . encodeMakefile
 
 withMakefileContents :: T.Text -> (Makefile -> IO ()) -> IO ()
 withMakefileContents contents a =
@@ -83,10 +106,10 @@ assertAssignment (n, v) (Makefile m) = unless (any hasAssignment m) $
         hasAssignment _                  = False
 
 assertTarget :: Target -> Makefile -> IO ()
-assertTarget t (Makefile m) = unless (any (hasTarget t) m) $
+assertTarget t (Makefile m) = unless (any hasTarget m) $
     error ("Target " ++ show t ++ " wasn't found in Makefile " ++ show m)
-  where hasTarget t (Rule t' _ _) = t == t'
-        hasTarget _ _                 = False
+  where hasTarget (Rule t' _ _) = t == t'
+        hasTarget _                 = False
 
 fromRight :: Either a b -> b
 fromRight (Right x) = x
@@ -182,6 +205,13 @@ allSyntaxTests = testGroup "syntax tests"
                   ]
               }
             )
+    , testCase "empty lines" $
+        let m = Makefile { entries = [OtherLine "", OtherLine ""] }
+        in assertMakefile m $
+            fromRight
+            . parseAll makefile
+            . TL.toStrict
+            $ encodeMakefile m
     , testCase "assign with spaces" $
         withMakefileContents
           (T.pack $ unlines
@@ -259,19 +289,88 @@ allSyntaxTests = testGroup "syntax tests"
                   ]
               }
             )
-    , testCase "rule" $
+    -- Courtesy of quickcheck
+    , testCase "target stuff" $
         withMakefileContents
           (T.pack $ unlines
-              [ "foo:"
-              , "\tcd dir/ && \\"
-              , "   ls"
-              ]
+            [ ""
+            , "# some comment"
+            , "foo::=bar"
+            ]
           )
           (assertMakefile
             Makefile
               { entries =
-                  [ Rule "foo" [] ["cd dir/ && ls"]
+                  [ OtherLine ""
+                  , OtherLine "# some comment"
+                  , Assignment SimplePosixAssign "foo" "bar"
                   ]
               }
             )
+    , recipeTests
     ]
+
+recipeTests :: TestTree
+recipeTests = testGroup "recipe tests"
+  [ testCase "simple recipe" $
+      withMakefileContents
+        (T.pack $ unlines
+            [ "foo:"
+            , "\techo foo"
+            ]
+        )
+        (assertMakefile
+          Makefile
+            { entries =
+                [ Rule "foo" [] ["echo foo"]
+                ]
+            }
+          )
+  , testCase "do not eat shell comments" $
+      withMakefileContents
+        (T.pack $ unlines
+            [ "foo:"
+            , "\t#hello"
+            , "\t#world"
+            ]
+        )
+        (assertMakefile
+          Makefile
+            { entries =
+                [ Rule "foo" []
+                    ["#hello"
+                    ,"#world"]
+                ]
+            }
+          )
+  , testCase "multi line" $
+      withMakefileContents
+        (T.pack $ unlines
+            [ "foo:"
+            , "\tcd dir/ && \\"
+            , "ls"
+            ]
+        )
+        (assertMakefile
+          Makefile
+            { entries =
+                [ Rule "foo" [] ["cd dir/ && \\\nls"]
+                ]
+            }
+          )
+  , testCase "multi line tab strip" $
+      withMakefileContents
+        (T.pack $ unlines
+            [ "foo:"
+            , "\tcd dir/ && \\"
+            , "\tls"
+            ]
+        )
+        (assertMakefile
+          Makefile
+            { entries =
+                [ Rule "foo" [] ["cd dir/ && \\\nls"]
+                ]
+            }
+          )
+  ]
