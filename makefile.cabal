@@ -62,7 +62,9 @@ test-suite test
                       , doctest      >= 0.9
                       , Glob         >= 0.7 && < 0.9
                       , QuickCheck   < 2.11
-                      , makefile
+                      -- explicitly specify the version to work around an issue
+                      -- with @stack upload --pvp-bounds both@
+                      , makefile     == 1.1.0.0
   other-modules:        Data.Makefile
                       , Data.Makefile.Parse
                       , Data.Makefile.Parse.Internal

@@ -87,6 +87,6 @@ baz: qux
 1. Commit the updated `makefile.cabal` file with commit name `Release
    v1.MAJOR.MINOR.PATCH`, as well as the updated documentation.
 1. Tag the commit with `git tag v1.MAJOR.MINOR.PATCH`.
+1. Run `stack upload --pvp-bounds both .` to upload `makefile` to `hackage`.
 1. Push with `git push --follow-tags`.
-1. Run `stack update --pvp-bounds both .` to upload `makefile` to `hackage`.
 
