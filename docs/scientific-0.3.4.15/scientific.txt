@@ -41,7 +41,7 @@
 --   always be bounded by the target type.</li>
 --   </ul>
 @package scientific
-@version 0.3.4.12
+@version 0.3.4.15
 
 
 -- | This module provides the number type <a>Scientific</a>. Scientific
