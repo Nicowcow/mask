@@ -68,3 +68,25 @@ foo:=bar
 baz: qux
 	rm -rf /
 ```
+
+
+# Release checklist
+
+
+1. Make sure you're on (latest) master.
+
+1. Bump the version in `makefile.cabal`: `0.MAJOR.MINOR.PATCH`.
+
+> Given a version number MAJOR.MINOR.PATCH, increment the:
+>
+> MAJOR version when you make incompatible API changes,
+> MINOR version when you add functionality in a backwards-compatible manner, and
+> PATCH version when you make backwards-compatible bug fixes.
+
+1. Run the script `script/make-doc`.
+1. Commit the updated `makefile.cabal` file with commit name `Release
+   v1.MAJOR.MINOR.PATCH`, as well as the updated documentation.
+1. Tag the commit with `git tag v1.MAJOR.MINOR.PATCH`.
+1. Push with `git push --follow-tags`.
+1. Run `stack update --pvp-bounds both .` to upload `makefile` to `hackage`.
+
