@@ -2,9 +2,8 @@
 
 # Haskell Makefile Parser and Generator
 
-Simple Haskell Makefile parser and generator. The project is available on
-hackage [(latest)](http://hackage.haskell.org/package/makefile) and
-documentation for `master` can be found [here](http://nmattia.github.io/mask/).
+Parse and generate `Makefile`s. The project is available on hackage
+[(latest)](http://hackage.haskell.org/package/makefile).
 
 # Example
 
@@ -83,10 +82,8 @@ baz: qux
 > MINOR version when you add functionality in a backwards-compatible manner, and
 > PATCH version when you make backwards-compatible bug fixes.
 
-1. Run the script `script/make-doc`.
 1. Commit the updated `makefile.cabal` file with commit name `Release
    v1.MAJOR.MINOR.PATCH`, as well as the updated documentation.
 1. Tag the commit with `git tag v1.MAJOR.MINOR.PATCH`.
 1. Run `stack upload --pvp-bounds both .` to upload `makefile` to `hackage`.
 1. Push with `git push --follow-tags`.
-

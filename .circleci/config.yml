@@ -1,0 +1,34 @@
+version: 2
+
+jobs:
+  build-nix:
+    machine:
+        enabled: true
+    steps:
+      - run:
+          name: Install Nix
+          command: |
+            sudo mkdir -p /nix
+            sudo chown circleci /nix
+            bash <(curl https://nixos.org/nix/install)
+            echo '. /home/circleci/.nix-profile/etc/profile.d/nix.sh' >> $BASH_ENV
+            sudo mkdir -p /etc/nix
+
+            # Enable sandbox
+            echo "sandbox = true" | sudo tee -a /etc/nix/nix.conf
+
+            # Keep derivations and their outputs for better caching
+            echo "keep-outputs = true" | sudo tee -a /etc/nix/nix.conf
+            echo "keep-derivations = true" | sudo tee -a /etc/nix/nix.conf
+
+      - checkout
+
+      - run:
+          name: Nix build
+          command: nix-build
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-nix
