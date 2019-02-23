@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nmattia/mask.svg?branch=master)](https://travis-ci.org/nmattia/mask)
+[![CircleCI](https://circleci.com/gh/nmattia/makefile.svg?style=svg)](https://circleci.com/gh/nmattia/makefile)
 
 # Haskell Makefile Parser and Generator
 
